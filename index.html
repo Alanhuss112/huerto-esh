@@ -5,62 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Huerto Hidropónico ESH</title>
     <link rel="stylesheet" href="style.css">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
+   
+    <header class="header-institucional">
+        <h1>Propedéutico Ciencias Básicas e Ingeniería</h1>
+        <h2>Escuela Superior de Huejutla</h2>
+        <div class="linea-decorativa"></div>
+    </header>
+
+    
     <nav class="navbar">
         <button id="nav-control" class="nav-btn active" onclick="switchTab('control')">Control</button>
         <button id="nav-stats" class="nav-btn" onclick="switchTab('stats')">Estadísticas</button>
     </nav>
 
+   
     <div class="app-container">
         
+       
         <section id="sec-control" class="app-section">
-            <h1 class="main-title">Huerto Hidropónico ESH</h1>
+            <h3 class="section-title">Monitoreo en Tiempo Real</h3>
             
             <div class="grid-monitoreo">
+            
                 <div class="card-sensor" id="card-ph">
                     <span class="sensor-title">Potencial de Hidrógeno</span>
                     <div class="sensor-value"><span id="ph">--</span></div>
-                    <span class="sensor-unit">pH Óptimo: 5.5 - 6.8</span>
+                    <span class="sensor-unit">Rango Óptimo: 5.5 - 6.8</span>
                 </div>
-
+                
+              
                 <div class="card-sensor" id="card-ec">
                     <span class="sensor-title">Conductividad Eléctrica</span>
-                    <div class="sensor-value"><span id="ec">--</span></div>
-                    <span class="sensor-unit">mS/cm (Óptimo: 1.0 - 2.0)</span>
+                    <div class="sensor-value"><span id="ec">--</span> <span class="unit-text">mS/cm</span></div>
+                    <span class="sensor-unit">Rango Óptimo: 1.0 - 2.0</span>
                 </div>
 
+           
                 <div class="card-sensor" id="card-temp">
-                    <span class="sensor-title">Temperatura</span>
-                    <div class="sensor-value"><span id="temp">--</span></div>
-                    <span class="sensor-unit">°C (Óptimo: 18 - 28°C)</span>
+                    <span class="sensor-title">Temperatura del Agua</span>
+                    <div class="sensor-value"><span id="temp">--</span> <span class="unit-text">°C</span></div>
+                    <span class="sensor-unit">Rango Óptimo: 18.0°C - 28.0°C</span>
                 </div>
 
+              
                 <div class="card-sensor" id="card-humedad">
-                    <span class="sensor-title">Humedad de Suelo</span>
-                    <div class="sensor-value"><span id="humedad">--</span></div>
-                    <span class="sensor-unit">% (Óptimo: 50 - 80%)</span>
+                    <span class="sensor-title">Humedad Sustrato</span>
+                    <div class="sensor-value"><span id="humedad">--</span> <span class="unit-text">%</span></div>
+                    <span class="sensor-unit">Rango Óptimo: 50.0% - 80.0%</span>
                 </div>
             </div>
 
-            <div class="control-panel">
-                <button id="btn-bomba" class="btn-action">CARGANDO...</button>
-                <div id="bomba-estado-txt" class="status-indicator">Verificando estado físico...</div>
+        
+            <div class="bomba-panel">
+                <h4>Actuador del Sistema</h4>
+                <p id="bomba-estado-txt">Conectando con el huerto... ⏳</p>
+                <button id="btn-bomba" class="btn-action btn-on">ENCENDER BOMBA</button>
             </div>
         </section>
 
+       
         <section id="sec-stats" class="app-section hidden">
-            <h1 class="main-title">Análisis Histórico</h1>
-            <div class="chart-container">
-                <canvas id="historicoChart"></canvas>
+            <h3 class="section-title">Historial y Tendencias del Sistema</h3>
+            
+            <div class="grid-graficas">
+                
+                <div class="chart-container">
+                    <h4>Evolución del pH</h4>
+                    <div class="canvas-wrapper">
+                        <canvas id="chart-ph-canvas"></canvas>
+                    </div>
+                </div>
+                
+                
+                <div class="chart-container">
+                    <h4>Conductividad Eléctrica (EC)</h4>
+                    <div class="canvas-wrapper">
+                        <canvas id="chart-ec-canvas"></canvas>
+                    </div>
+                </div>
+                
+               
+                <div class="chart-container">
+                    <h4>Temperatura del Agua</h4>
+                    <div class="canvas-wrapper">
+                        <canvas id="chart-temp-canvas"></canvas>
+                    </div>
+                </div>
             </div>
-            <p class="chart-info">La gráfica muestra el comportamiento de las variables en tiempo real desde que abriste la sesión.</p>
         </section>
 
     </div>
 
+   
     <script type="module" src="script.js"></script>
 </body>
 </html>
