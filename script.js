@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-let chartPH, chartEC, chartTemp;
+let chartPH, chartTemp, chartEC; 
 let currentBombaSolicitud = 0;
 
 const firebaseConfig = {
@@ -20,8 +20,8 @@ window.switchTab = (tabId) => {
     
     if (tabId === 'stats') {
         if (chartPH) chartPH.resize();
-        if (chartEC) chartEC.resize();
         if (chartTemp) chartTemp.resize();
+        if (chartEC) chartEC.resize();
     }
 };
 
@@ -31,31 +31,30 @@ document.addEventListener("DOMContentLoaded", () => {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-            x: { grid: { color: '#313244' }, ticks: { color: '#a6adc8' } },
-            y: { grid: { color: '#313244' }, ticks: { color: '#a6adc8' } }
+            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a6adc8' } },
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a6adc8' } }
         },
         plugins: { legend: { display: false } }
     };
     
     chartPH = new Chart(document.getElementById('chart-ph-canvas').getContext('2d'), {
         type: 'line',
-        data: { labels: [], datasets: [{ data: [], borderColor: '#89dceb', backgroundColor: 'rgba(137, 220, 235, 0.05)', tension: 0.3, fill: true }] },
-        options: opcionesComunes
-    });
-
-    chartEC = new Chart(document.getElementById('chart-ec-canvas').getContext('2d'), {
-        type: 'line',
-        data: { labels: [], datasets: [{ data: [], borderColor: '#a6e3a1', backgroundColor: 'rgba(166, 227, 161, 0.05)', tension: 0.3, fill: true }] },
+        data: { labels: [], datasets: [{ data: [], borderColor: '#31ded9', backgroundColor: 'rgba(49, 222, 217, 0.05)', tension: 0.3, fill: true }] },
         options: opcionesComunes
     });
 
     chartTemp = new Chart(document.getElementById('chart-temp-canvas').getContext('2d'), {
         type: 'line',
-        data: { labels: [], datasets: [{ data: [], borderColor: '#f9e2af', backgroundColor: 'rgba(249, 226, 175, 0.05)', tension: 0.3, fill: true }] },
+        data: { labels: [], datasets: [{ data: [], borderColor: '#ff00ff', backgroundColor: 'rgba(255, 0, 255, 0.05)', tension: 0.3, fill: true }] },
         options: opcionesComunes
     });
 
-    // LECTURA DE DATOS DESDE FIREBASE
+    chartEC = new Chart(document.getElementById('chart-ec-canvas').getContext('2d'), {
+        type: 'line',
+        data: { labels: [], datasets: [{ data: [], borderColor: '#31ded9', backgroundColor: 'rgba(49, 222, 217, 0.05)', tension: 0.3, fill: true }] },
+        options: opcionesComunes
+    });
+
     onValue(nodeRef, (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
@@ -69,51 +68,41 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         checkAlert('card-ph', data.ph, 5.5, 6.8);
+        checkAlert('card-temp', data.temp, 18.0, 24.0);
         checkAlert('card-ec', data.ec, 1.0, 2.0);
-        checkAlert('card-temp', data.temp, 18.0, 28.0);
-        checkAlert('card-humedad', data.humedad, 50.0, 80.0);
 
-        // Lógica de Sincronización de la Bomba
         currentBombaSolicitud = data.bomba_solicitud || 0;
-        const btnBomba = document.getElementById('btn-bomba');
-        const txtEstado = document.getElementById('bomba-estado-txt');
+        const sliderBomba = document.getElementById('toggle-bomba');
+        const txtEstadoBomba = document.getElementById('bomba-status-txt');
 
-        if (currentBombaSolicitud === 1) {
-            btnBomba.innerText = "APAGAR BOMBA";
-            btnBomba.className = "btn-action btn-off";
-        } else {
-            btnBomba.innerText = "ENCENDER BOMBA";
-            btnBomba.className = "btn-action btn-on";
-        }
+        sliderBomba.checked = (currentBombaSolicitud === 1);
 
         if (data.bomba_estado === currentBombaSolicitud) {
-            txtEstado.innerText = data.bomba_estado === 1 ? "Estado Físico: TRABAJANDO ✔" : "Estado Físico: APAGADA 💤";
-            txtEstado.style.color = "#a6e3a1";
+            txtEstadoBomba.innerText = data.bomba_estado === 1 ? "Estado Físico: TRABAJANDO ✔" : "Estado Físico: APAGADA 💤";
+            txtEstadoBomba.style.color = "#a6e3a1";
         } else {
-            txtEstado.innerText = "Sincronizando con el huerto... ⏳";
-            txtEstado.style.color = "#f9e2af";
+            txtEstadoBomba.innerText = "Sincronizando con el huerto... ⏳";
+            txtEstadoBomba.style.color = "#ff00ff";
         }
 
-     
         const estadoPeltier = data.estado_peltier || false;
-        const tarjetaPeltier = document.getElementById('tarjeta-peltier');
-        const textoPeltier = document.getElementById('peltier-estado');
-        const iconoPeltier = document.getElementById('peltier-icono');
+        const panelPeltier = document.getElementById('panel-peltier');
+        const sliderPeltier = document.getElementById('slider-peltier');
+        const txtStatusPeltier = document.getElementById('peltier-status-txt');
 
         if (estadoPeltier === true || String(estadoPeltier).toLowerCase() === "true") {
-            tarjetaPeltier.classList.add('peltier-activa-estilo');
-            textoPeltier.innerText = "ENFRIANDO AGUA ❄️";
-            iconoPeltier.classList.remove('icono-reposo');
+            panelPeltier.classList.add('peltier-activa-visual');
+            sliderPeltier.checked = true;
+            txtStatusPeltier.innerText = "Estado Potencia: ENFRIANDO (Peltier 12V 10A Activa) ❄️";
         } else {
-            tarjetaPeltier.classList.remove('peltier-activa-estilo');
-            textoPeltier.innerText = "SISTEMA EN REPOSO";
-            iconoPeltier.classList.add('icono-reposo');
+            panelPeltier.classList.remove('peltier-activa-visual');
+            sliderPeltier.checked = false;
+            txtStatusPeltier.innerText = "Estado Potencia: SISTEMA EN REPOSO";
         }
 
-        
         const tiempoActual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-        [chartPH, chartEC, chartTemp].forEach(chart => {
+        [chartPH, chartTemp, chartEC].forEach(chart => {
             if (chart.data.labels.length > 15) {
                 chart.data.labels.shift();
                 chart.data.datasets[0].data.shift();
@@ -125,45 +114,44 @@ document.addEventListener("DOMContentLoaded", () => {
             chartPH.data.datasets[0].data.push(data.ph);
             chartPH.update('none');
         }
-        if(data.ec !== undefined) {
-            chartEC.data.labels.push(tiempoActual);
-            chartEC.data.datasets[0].data.push(data.ec);
-            chartEC.update('none');
-        }
         if(data.temp !== undefined) {
             chartTemp.data.labels.push(tiempoActual);
             chartTemp.data.datasets[0].data.push(data.temp);
             chartTemp.update('none');
         }
+        if(data.ec !== undefined) {
+            chartEC.data.labels.push(tiempoActual);
+            chartEC.data.datasets[0].data.push(data.ec);
+            chartEC.update('none');
+        }
     });
 
-   
-    document.getElementById('btn-bomba').addEventListener('click', () => {
-        const nuevoEstado = currentBombaSolicitud === 1 ? 0 : 1;
+    document.getElementById('toggle-bomba').addEventListener('change', (e) => {
+        const nuevoEstado = e.target.checked ? 1 : 0;
         set(ref(db, 'AT_H_V1/bomba_solicitud'), nuevoEstado);
     });
-
-    // =======================================================
-    // SIMULACIÓN PARA PRUEBAS SIN ESP32
-    // =======================================================
-    // Cambiar esto a 'false' cuando se tenga todo preparado
+// cambiar a false cuando se conecten los sensores 
     const ACTIVAR_SIMULADOR = true; 
 
     if (ACTIVAR_SIMULADOR) {
-        console.warn("Módulo de simulación activado: Escribiendo en Firebase AT_H_V1...");
+        console.warn("Módulo de simulación V5 activado: Escribiendo en Firebase AT_H_V1...");
         setInterval(() => {
-            let simTemp = (Math.random() * (26.0 - 20.0) + 20.0);
+            
+            let simTemp = (Math.random() * (26.0 - 22.0) + 22.0);
+            
+            let simPH = (Math.random() * (6.5 - 5.5) + 5.5);
+            let simEC = (Math.random() * (1.8 - 1.2) + 1.2);
             
             set(ref(db, 'AT_H_V1'), {
-                ph: (Math.random() * (6.5 - 5.5) + 5.5),
-                ec: (Math.random() * (1.8 - 1.2) + 1.2),
+                ph: simPH,
+                ec: simEC,
                 temp: simTemp,
-                humedad: (Math.random() * (75.0 - 65.0) + 65.0),
-                bomba_estado: currentBombaSolicitud, // Simula respuesta instantánea de la bomba
+                bomba_estado: currentBombaSolicitud, 
                 bomba_solicitud: currentBombaSolicitud,
-                estado_peltier: (simTemp > 24.0) // Histéresis simulada > 24°C
+            
+                estado_peltier: (simTemp > 24.0) 
             });
-        }, 5000); // Inyecta datos a tu nube cada 5 segundos
+        }, 5000); 
     }
 });
 
