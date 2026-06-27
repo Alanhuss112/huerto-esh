@@ -26,7 +26,7 @@ Este sistema fue diseñado para resolver problemáticas reales de la instrumenta
 * **Aislamiento Galvánico por Software:** La alimentación eléctrica (VCC) de cada sensor analógico es controlada mediante pines digitales secuenciales del ESP32. Esto evita bucles de tierra y la interferencia cruzada entre los sensores de pH y CE al medir en la misma solución.
 * **Acondicionamiento Térmico Activo (Peltier):** Integración de un sistema de refrigeración de estado sólido (Celda Peltier TEC1-12706 + Fuente 12V 10A) controlado mediante una banda de histéresis programada en el microcontrolador. Mantiene el agua entre los 18°C y 24°C para evitar la hipoxia radicular.
 * **Compensación Automática de Temperatura (ATC):** Algoritmo que ajusta matemáticamente las lecturas de Conductividad Eléctrica en función de la temperatura del agua leída por el sensor digital sumergible DS18B20.
-* **Dashboard Web Profesional:** Interfaz de usuario diseñada bajo el paradigma de *Glassmorphism*, integración con **Chart.js** para visualización de históricos y comunicación bidireccional en tiempo real.
+* **Dashboard Web:** Interfaz de usuario diseñada bajo el paradigma de *Glassmorphism*, integración con **Chart.js** para visualización de históricos y comunicación bidireccional en tiempo real.
 
 ---
 
