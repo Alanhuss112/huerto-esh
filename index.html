@@ -42,7 +42,7 @@
                 <div class="card-sensor" id="card-temp">
                     <span class="sensor-title">Temperatura del Agua</span>
                     <div class="sensor-value"><span id="temp">--</span> <span class="unit-text">°C</span></div>
-                    <span class="sensor-unit">Rango Óptimo: 18.0°C - 28.0°C</span>
+                    <span class="sensor-unit">Rango Óptimo: 18.0°C - 24.0°C</span>
                 </div>
 
                 <div class="card-sensor" id="card-humedad">
@@ -52,10 +52,21 @@
                 </div>
             </div>
 
-            <div class="bomba-panel">
-                <h4>Actuador del Sistema</h4>
-                <p id="bomba-estado-txt">Conectando con el huerto... ⏳</p>
-                <button id="btn-bomba" class="btn-action btn-on">ENCENDER BOMBA</button>
+            <div class="actuadores-seccion">
+                <div class="actuador-contenedor">
+                    <h4>Bomba de Nutrientes</h4>
+                    <p id="bomba-estado-txt" class="estado-texto">Conectando con el huerto... ⏳</p>
+                    <button id="btn-bomba" class="btn-action btn-on">ENCENDER BOMBA</button>
+                </div>
+
+                <div class="actuador-contenedor tarjeta-peltier" id="tarjeta-peltier">
+                    <h4>Climatización (Peltier)</h4>
+                    <div class="peltier-info-bloque">
+                        <span id="peltier-icono" class="icono-reposo">❄️</span>
+                        <p id="peltier-estado">SISTEMA EN REPOSO</p>
+                    </div>
+                    <span class="subtexto-hardware">Controlado automáticamente por ESP32</span>
+                </div>
             </div>
         </section>
 

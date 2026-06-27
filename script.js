@@ -1,11 +1,8 @@
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-
 let chartPH, chartEC, chartTemp;
 let currentBombaSolicitud = 0;
-
 
 const firebaseConfig = {
     databaseURL: "https://huerto-propedeutico-default-rtdb.firebaseio.com/"
@@ -21,14 +18,12 @@ window.switchTab = (tabId) => {
     document.getElementById('nav-control').classList.toggle('active', tabId === 'control');
     document.getElementById('nav-stats').classList.toggle('active', tabId === 'stats');
     
-    
     if (tabId === 'stats') {
         if (chartPH) chartPH.resize();
         if (chartEC) chartEC.resize();
         if (chartTemp) chartTemp.resize();
     }
 };
-
 
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -41,7 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         plugins: { legend: { display: false } }
     };
-
     
     chartPH = new Chart(document.getElementById('chart-ph-canvas').getContext('2d'), {
         type: 'line',
@@ -55,22 +49,20 @@ document.addEventListener("DOMContentLoaded", () => {
         options: opcionesComunes
     });
 
-    
     chartTemp = new Chart(document.getElementById('chart-temp-canvas').getContext('2d'), {
         type: 'line',
         data: { labels: [], datasets: [{ data: [], borderColor: '#f9e2af', backgroundColor: 'rgba(249, 226, 175, 0.05)', tension: 0.3, fill: true }] },
         options: opcionesComunes
     });
 
-   
+    // LECTURA DE DATOS DESDE FIREBASE
     onValue(nodeRef, (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
 
-       
         Object.keys(data).forEach(key => {
             const textElement = document.getElementById(key);
-            if (textElement) {
+            if (textElement && key !== 'estado_peltier') {
                 const value = typeof data[key] === 'number' && !Number.isInteger(data[key]) ? data[key].toFixed(2) : data[key];
                 textElement.innerText = value;
             }
@@ -81,6 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
         checkAlert('card-temp', data.temp, 18.0, 28.0);
         checkAlert('card-humedad', data.humedad, 50.0, 80.0);
 
+        // Lógica de Sincronización de la Bomba
         currentBombaSolicitud = data.bomba_solicitud || 0;
         const btnBomba = document.getElementById('btn-bomba');
         const txtEstado = document.getElementById('bomba-estado-txt');
@@ -101,6 +94,23 @@ document.addEventListener("DOMContentLoaded", () => {
             txtEstado.style.color = "#f9e2af";
         }
 
+     
+        const estadoPeltier = data.estado_peltier || false;
+        const tarjetaPeltier = document.getElementById('tarjeta-peltier');
+        const textoPeltier = document.getElementById('peltier-estado');
+        const iconoPeltier = document.getElementById('peltier-icono');
+
+        if (estadoPeltier === true || String(estadoPeltier).toLowerCase() === "true") {
+            tarjetaPeltier.classList.add('peltier-activa-estilo');
+            textoPeltier.innerText = "ENFRIANDO AGUA ❄️";
+            iconoPeltier.classList.remove('icono-reposo');
+        } else {
+            tarjetaPeltier.classList.remove('peltier-activa-estilo');
+            textoPeltier.innerText = "SISTEMA EN REPOSO";
+            iconoPeltier.classList.add('icono-reposo');
+        }
+
+        
         const tiempoActual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
         [chartPH, chartEC, chartTemp].forEach(chart => {
@@ -127,11 +137,34 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    
+   
     document.getElementById('btn-bomba').addEventListener('click', () => {
         const nuevoEstado = currentBombaSolicitud === 1 ? 0 : 1;
         set(ref(db, 'AT_H_V1/bomba_solicitud'), nuevoEstado);
     });
+
+    // =======================================================
+    // SIMULACIÓN PARA PRUEBAS SIN ESP32
+    // =======================================================
+    // Cambiar esto a 'false' cuando se tenga todo preparado
+    const ACTIVAR_SIMULADOR = true; 
+
+    if (ACTIVAR_SIMULADOR) {
+        console.warn("Módulo de simulación activado: Escribiendo en Firebase AT_H_V1...");
+        setInterval(() => {
+            let simTemp = (Math.random() * (26.0 - 20.0) + 20.0);
+            
+            set(ref(db, 'AT_H_V1'), {
+                ph: (Math.random() * (6.5 - 5.5) + 5.5),
+                ec: (Math.random() * (1.8 - 1.2) + 1.2),
+                temp: simTemp,
+                humedad: (Math.random() * (75.0 - 65.0) + 65.0),
+                bomba_estado: currentBombaSolicitud, // Simula respuesta instantánea de la bomba
+                bomba_solicitud: currentBombaSolicitud,
+                estado_peltier: (simTemp > 24.0) // Histéresis simulada > 24°C
+            });
+        }, 5000); // Inyecta datos a tu nube cada 5 segundos
+    }
 });
 
 function checkAlert(cardId, value, min, max) {
