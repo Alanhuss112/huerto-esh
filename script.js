@@ -10,10 +10,10 @@ const historyData = {
 const labelsHora = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', 'Ahora'];
 
 const configMap = {
-  ph: { label: 'Potencial de Hidrógeno (pH)', name: 'pH', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
-  temperatura: { label: 'Temperatura (°C)', name: 'Temperatura', color: '#ff5d67', bg: 'rgba(255, 93, 103, 0.15)' },
-  ec: { label: 'Conductividad (mS/cm)', name: 'Conductividad Eléctrica', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.15)' },
-  humedad: { label: 'Humedad (%)', name: 'Humedad Relativa', color: '#35e58a', bg: 'rgba(53, 229, 138, 0.15)' }
+  ph: { label: 'Potencial de Hidrógeno (pH)', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
+  temperatura: { label: 'Temperatura (°C)', color: '#ff5d67', bg: 'rgba(255, 93, 103, 0.15)' },
+  ec: { label: 'Conductividad (mS/cm)', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.15)' },
+  humedad: { label: 'Humedad (%)', color: '#35e58a', bg: 'rgba(53, 229, 138, 0.15)' }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -81,22 +81,22 @@ function iniciarReloj() {
 
 function inicializarGrafica() {
   const ctx = document.getElementById('sensorChart').getContext('2d');
-  const initialMetric = configMap.ph;
+  const initialConfig = configMap.ph;
   
   sensorChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labelsHora,
       datasets: [{
-        label: initialMetric.label,
+        label: initialConfig.label,
         data: historyData.ph,
-        borderColor: initialMetric.color,
-        backgroundColor: initialMetric.bg,
+        borderColor: initialConfig.color,
+        backgroundColor: initialConfig.bg,
         borderWidth: 3,
         tension: 0.35,
         fill: true,
         pointBackgroundColor: '#ffffff',
-        pointBorderColor: initialMetric.color,
+        pointBorderColor: initialConfig.color,
         pointRadius: 4,
         pointHoverRadius: 6
       }]
@@ -104,7 +104,7 @@ function inicializarGrafica() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 400 },
+      animation: { duration: 300 },
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: '#9db8ae' }, grid: { color: 'rgba(255, 255, 255, 0.035)' } },
@@ -118,13 +118,15 @@ function cambiarMetricaGrafica() {
   const metricKey = document.getElementById('chartSelect').value;
   const current = configMap[metricKey] || configMap.ph;
 
-  document.getElementById('selectedMetricName').innerText = current.name;
+  if (!sensorChart) return;
 
-  sensorChart.data.datasets[0].label = current.label;
-  sensorChart.data.datasets[0].data = historyData[metricKey];
-  sensorChart.data.datasets[0].borderColor = current.color;
-  sensorChart.data.datasets[0].backgroundColor = current.bg;
-  sensorChart.data.datasets[0].pointBorderColor = current.color;
+  const dataset = sensorChart.data.datasets[0];
+  dataset.label = current.label;
+  dataset.data = historyData[metricKey];
+  dataset.borderColor = current.color;
+  dataset.backgroundColor = current.bg;
+  dataset.pointBorderColor = current.color;
+
   sensorChart.update();
 }
 
