@@ -18,10 +18,10 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarInterfaz();
   }
 
-  document.getElementById('btn-add-tracker').addEventListener('click', addTracker);
+  document.getElementById('btn-add-tracker').addEventListener('click', () => addTracker());
   document.getElementById('tracker-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addTracker(); });
 
-  document.getElementById('btn-add-task').addEventListener('click', addTask);
+  document.getElementById('btn-add-task').addEventListener('click', () => addTask());
   document.getElementById('task-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addTask(); });
 });
 
@@ -142,9 +142,9 @@ function toggleActuador(actuador, estado) {
   }
 }
 
-function addTracker(title = "", day = 8) {
+function addTracker(title = "", day = 1) {
   const input = document.getElementById('tracker-input');
-  const name = title || input.value.trim();
+  const name = (typeof title === 'string' && title.length > 0) ? title : input.value.trim();
   if (!name) return;
 
   const container = document.getElementById('tracker-container');
@@ -171,7 +171,7 @@ function addTracker(title = "", day = 8) {
   `;
 
   container.appendChild(newTracker);
-  if (!title) input.value = '';
+  input.value = '';
   guardarTrackers();
 }
 
@@ -180,7 +180,7 @@ function guardarTrackers() {
   document.querySelectorAll('.tracker-item').forEach(el => {
     const title = el.querySelector('.tracker-title').innerText;
     const daysText = el.querySelector('.tracker-days').innerText;
-    const day = parseInt(daysText.match(/\d+/)[0]) || 8;
+    const day = parseInt(daysText.match(/\d+/)[0]) || 1;
     items.push({ title, day });
   });
   localStorage.setItem('hidro_trackers_list', JSON.stringify(items));
@@ -188,7 +188,7 @@ function guardarTrackers() {
 
 function addTask(text = "", completed = false) {
   const input = document.getElementById('task-input');
-  const taskText = text || input.value.trim();
+  const taskText = (typeof text === 'string' && text.length > 0) ? text : input.value.trim();
   if (!taskText) return;
 
   const container = document.getElementById('task-container');
@@ -217,7 +217,7 @@ function addTask(text = "", completed = false) {
   });
 
   container.appendChild(newTask);
-  if (!text) input.value = '';
+  input.value = '';
   guardarTasks();
 }
 
