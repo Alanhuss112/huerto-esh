@@ -1,12 +1,15 @@
+
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  databaseURL: "https://tu-proyecto-rtbd.firebaseio.com",
-  projectId: "tu-proyecto",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyCPr2QN1gvo5Ngekcos86uo2maX_mHrGF0",
+  authDomain: "huerto-hidroponico-esh.firebaseapp.com",
+  databaseURL: "https://huerto-hidroponico-esh-default-rtdb.firebaseio.com",
+  projectId: "huerto-hidroponico-esh",
+  storageBucket: "huerto-hidroponico-esh.firebasestorage.app",
+  messagingSenderId: "380114491557",
+  appId: "1:380114491557:web:bf85a1b207638093abd54c",
+  measurementId: "G-DGXDEVKXZ0"
 };
+
 
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
@@ -33,11 +36,42 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarInterfaz();
   }
 
-  document.getElementById('btn-add-tracker').addEventListener('click', () => addTracker());
-  document.getElementById('tracker-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addTracker(); });
+  
+  const btnTracker = document.getElementById('btn-add-tracker');
+  if (btnTracker) {
+    btnTracker.addEventListener('click', (e) => {
+      e.preventDefault();
+      addTracker();
+    });
+  }
 
-  document.getElementById('btn-add-task').addEventListener('click', () => addTask());
-  document.getElementById('task-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addTask(); });
+  const trackerInput = document.getElementById('tracker-input');
+  if (trackerInput) {
+    trackerInput.addEventListener('keypress', (e) => { 
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addTracker();
+      }
+    });
+  }
+
+  const btnTask = document.getElementById('btn-add-task');
+  if (btnTask) {
+    btnTask.addEventListener('click', (e) => {
+      e.preventDefault();
+      addTask();
+    });
+  }
+
+  const taskInput = document.getElementById('task-input');
+  if (taskInput) {
+    taskInput.addEventListener('keypress', (e) => { 
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addTask();
+      }
+    });
+  }
 });
 
 function toggleMostrarPass() {
@@ -89,12 +123,15 @@ function cerrarSesion() {
 function iniciarReloj() {
   setInterval(() => {
     const ahora = new Date();
-    document.getElementById("liveClock").innerText = ahora.toLocaleTimeString('es-MX');
+    const relojEl = document.getElementById("liveClock");
+    if (relojEl) relojEl.innerText = ahora.toLocaleTimeString('es-MX');
   }, 1000);
 }
 
 function inicializarGrafica() {
-  const ctx = document.getElementById('sensorChart').getContext('2d');
+  const canvasEl = document.getElementById('sensorChart');
+  if (!canvasEl) return;
+  const ctx = canvasEl.getContext('2d');
   const selectedKey = document.getElementById('chartSelect').value || 'ph';
   const currentConfig = configMap[selectedKey];
   
@@ -137,7 +174,10 @@ function cambiarMetricaGrafica() {
     sensorChart.destroy();
   }
 
-  const ctx = document.getElementById('sensorChart').getContext('2d');
+  const canvasEl = document.getElementById('sensorChart');
+  if (!canvasEl) return;
+  const ctx = canvasEl.getContext('2d');
+  
   sensorChart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -174,6 +214,7 @@ function toggleActuador(actuador, estado) {
 }
 
 function escucharFirebase() {
+  
   database.ref('sensores').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -213,10 +254,11 @@ function escucharFirebase() {
     }
   });
 
- 
+  
   database.ref('trackers').on('value', (snapshot) => {
     const container = document.getElementById('tracker-container');
-    container.innerHTML = '';
+    if (!container) return;
+    container.innerHTML = ''; 
     const trackers = snapshot.val();
 
     if (trackers) {
@@ -227,10 +269,11 @@ function escucharFirebase() {
     }
   });
 
- 
+  
   database.ref('tasks').on('value', (snapshot) => {
     const container = document.getElementById('task-container');
-    container.innerHTML = '';
+    if (!container) return;
+    container.innerHTML = ''; 
     const tasks = snapshot.val();
 
     if (tasks) {
@@ -260,8 +303,8 @@ function addTracker() {
   });
 
   nameInput.value = '';
-  dayInput.value = '';
-  dateInput.value = '';
+  if (dayInput) dayInput.value = '';
+  if (dateInput) dateInput.value = '';
 }
 
 function renderTrackerItem(key, title, startDay, startDateStr) {
@@ -274,6 +317,8 @@ function renderTrackerItem(key, title, startDay, startDateStr) {
   const percentage = Math.min(100, Math.max(0, (currentDay / 30) * 100));
 
   const container = document.getElementById('tracker-container');
+  if (!container) return;
+  
   const newTracker = document.createElement('div');
   newTracker.className = 'tracker-item';
 
@@ -282,7 +327,7 @@ function renderTrackerItem(key, title, startDay, startDateStr) {
         <span class="tracker-title">${title}</span>
         <div class="tracker-actions">
             <span class="tracker-days">Día ${currentDay} / 30</span>
-            <button class="tracker-delete"><i class="fa-solid fa-xmark"></i></button>
+            <button class="tracker-delete" title="Eliminar tracker"><i class="fa-solid fa-xmark"></i></button>
         </div>
     </div>
     <div class="tracker-visual-bar">
@@ -306,6 +351,7 @@ function renderTrackerItem(key, title, startDay, startDateStr) {
 
 function addTask() {
   const input = document.getElementById('task-input');
+  if (!input) return;
   const text = input.value.trim();
   if (!text) return;
 
@@ -319,12 +365,14 @@ function addTask() {
 
 function renderTaskItem(key, text, completed) {
   const container = document.getElementById('task-container');
+  if (!container) return;
+  
   const newTask = document.createElement('div');
   newTask.className = `task-item ${completed ? 'completed' : ''}`;
   newTask.innerHTML = `
       <div class="task-checkbox"><i class="fa-solid fa-check"></i></div>
       <span class="task-text">${text}</span>
-      <button class="task-delete"><i class="fa-solid fa-xmark"></i></button>
+      <button class="task-delete" title="Eliminar tarea"><i class="fa-solid fa-xmark"></i></button>
   `;
   
   newTask.addEventListener('click', function(e) {
