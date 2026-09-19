@@ -304,6 +304,18 @@ input:checked + .slider:before { transform: translateX(24px); }
   gap: 20px;
 }
 
+/* TRACKER INPUTS FORM */
+.tracker-inputs-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+.tracker-inputs-form input {
+  padding: 10px 12px; background: rgba(0,0,0,0.3);
+  border: 1px solid var(--card-border); color: white; border-radius: 10px; outline: none; font-size: 0.85em;
+}
+.tracker-inputs-form input:focus { border-color: var(--green-bright); }
+
+.tracker-inputs-row { display: flex; gap: 8px; }
+.tracker-inputs-row input[type="date"] { flex: 2; }
+.tracker-inputs-row input[type="number"] { flex: 1.2; }
+
 .input-group-add { display: flex; gap: 10px; margin-bottom: 20px; }
 .input-group-add input {
   flex: 1; padding: 12px; background: rgba(0,0,0,0.3);
@@ -317,17 +329,21 @@ input:checked + .slider:before { transform: translateX(24px); }
 }
 .btn-add:hover { background: var(--green-hover); transform: scale(1.05); }
 
-.tracker-list { display: flex; flex-direction: column; gap: 15px; }
+.tracker-list { display: flex; flex-direction: column; gap: 12px; }
 
 .tracker-item {
   background: rgba(0,0,0,0.25); padding: 15px; border-radius: 12px;
   border: 1px solid var(--card-border); border-left: 4px solid var(--cyan-neon);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
-.tracker-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.tracker-title { font-weight: bold; font-size: 1rem; color: #ffffff; }
-.tracker-days { font-size: 0.8em; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 12px; color: var(--green-bright); }
+.tracker-header { display: flex; justify-content: space-between; align-items: center; }
+.tracker-title { font-weight: bold; font-size: 0.95rem; color: #ffffff; }
+
+.tracker-actions { display: flex; align-items: center; gap: 10px; }
+.tracker-days { font-size: 0.78em; background: rgba(255,255,255,0.08); padding: 3px 8px; border-radius: 10px; color: var(--green-bright); }
+.tracker-delete { color: var(--danger); background: none; border: none; font-size: 1.1em; cursor: pointer; opacity: 0.6; transition: 0.3s; }
+.tracker-delete:hover { opacity: 1; transform: scale(1.15); }
 
 .tracker-visual-bar {
   width: 100%; height: 24px; background: rgba(255,255,255,0.05);
@@ -349,7 +365,7 @@ input:checked + .slider:before { transform: translateX(24px); }
   box-shadow: 0 0 10px white; z-index: 10; transition: left 0.5s;
 }
 
-.tracker-dates { display: flex; justify-content: space-between; font-size: 0.75em; color: var(--text-muted); }
+.tracker-dates { display: flex; justify-content: space-between; font-size: 0.72em; color: var(--text-muted); }
 
 .task-list { display: flex; flex-direction: column; gap: 10px; }
 

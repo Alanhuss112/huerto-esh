@@ -142,21 +142,40 @@ function toggleActuador(actuador, estado) {
   }
 }
 
-function addTracker(title = "", day = 1) {
-  const input = document.getElementById('tracker-input');
-  const name = (typeof title === 'string' && title.length > 0) ? title : input.value.trim();
+function addTracker(title = "", initialDay = null, startDateStr = "") {
+  const nameInput = document.getElementById('tracker-input');
+  const dateInput = document.getElementById('tracker-date-input');
+  const dayInput = document.getElementById('tracker-day-input');
+
+  const name = (typeof title === 'string' && title.length > 0) ? title : nameInput.value.trim();
   if (!name) return;
+
+  let startDate = startDateStr ? new Date(startDateStr) : (dateInput.value ? new Date(dateInput.value) : new Date());
+  let startDay = initialDay !== null ? parseInt(initialDay) : (parseInt(dayInput.value) || 1);
+
+  // Calcular días desde fecha de inicio
+  const hoy = new Date();
+  const diffTime = Math.max(0, hoy - startDate);
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  let currentDay = Math.min(30, Math.max(1, startDay + diffDays));
+  const percentage = Math.min(100, Math.max(0, (currentDay / 30) * 100));
+
+  const fechaFormateada = startDate.toISOString().split('T')[0];
 
   const container = document.getElementById('tracker-container');
   const newTracker = document.createElement('div');
   newTracker.className = 'tracker-item';
-  
-  const percentage = Math.min(100, Math.max(0, (day / 30) * 100));
+  newTracker.dataset.startDate = fechaFormateada;
+  newTracker.dataset.startDay = startDay;
 
   newTracker.innerHTML = `
-    <div class="tracker-top">
+    <div class="tracker-header">
         <span class="tracker-title">${name}</span>
-        <span class="tracker-days">Día ${day} / 30</span>
+        <div class="tracker-actions">
+            <span class="tracker-days">Día ${currentDay} / 30</span>
+            <button class="tracker-delete"><i class="fa-solid fa-xmark"></i></button>
+        </div>
     </div>
     <div class="tracker-visual-bar">
         <div class="fase-agua">Fase 1: Agua</div>
@@ -164,14 +183,22 @@ function addTracker(title = "", day = 1) {
         <div class="tracker-cursor" style="left: ${percentage}%;"></div>
     </div>
     <div class="tracker-dates">
-        <span>Inicio: Hoy</span>
+        <span>Inicio: ${fechaFormateada}</span>
         <span>Cambio: +15d</span>
         <span>Cosecha: +30d</span>
     </div>
   `;
 
+  newTracker.querySelector('.tracker-delete').addEventListener('click', () => {
+    newTracker.remove();
+    guardarTrackers();
+  });
+
   container.appendChild(newTracker);
-  input.value = '';
+
+  nameInput.value = '';
+  dayInput.value = '';
+  dateInput.value = '';
   guardarTrackers();
 }
 
@@ -179,9 +206,9 @@ function guardarTrackers() {
   const items = [];
   document.querySelectorAll('.tracker-item').forEach(el => {
     const title = el.querySelector('.tracker-title').innerText;
-    const daysText = el.querySelector('.tracker-days').innerText;
-    const day = parseInt(daysText.match(/\d+/)[0]) || 1;
-    items.push({ title, day });
+    const startDate = el.dataset.startDate;
+    const startDay = parseInt(el.dataset.startDay) || 1;
+    items.push({ title, startDate, startDay });
   });
   localStorage.setItem('hidro_trackers_list', JSON.stringify(items));
 }
@@ -234,9 +261,9 @@ function guardarTasks() {
 function cargarDatosGuardados() {
   const savedTrackers = JSON.parse(localStorage.getItem('hidro_trackers_list'));
   if (savedTrackers && savedTrackers.length > 0) {
-    savedTrackers.forEach(item => addTracker(item.title, item.day));
+    savedTrackers.forEach(item => addTracker(item.title, item.startDay, item.startDate));
   } else {
-    addTracker('Germinado de Prueba', 8);
+    addTracker('Germinado de Prueba', 8, new Date().toISOString().split('T')[0]);
   }
 
   const savedTasks = JSON.parse(localStorage.getItem('hidro_tasks_list'));

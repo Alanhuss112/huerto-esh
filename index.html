@@ -139,21 +139,23 @@
       <div class="card control-card">
         <h3><i class="fa-solid fa-microchip"></i> Control de Dispositivos (ESP32)</h3>
         <div class="control-grid">
+          
+          <!-- Bomba 1: Indicador de conexión permanente (Sin switch) -->
           <div class="control-item">
             <div class="actuator-info">
               <i class="fa-solid fa-faucet-drip actuator-icon"></i>
               <div>
                 <strong>Bomba 1 — Principal</strong>
                 <span>Sistema NFT / Riego continuo</span>
-                <div class="actuator-status" id="statusBomba1"><span class="status-dot"></span> APAGADA</div>
+                <div class="actuator-status on"><span class="status-dot"></span> SIEMPRE ACTIVA (24/7)</div>
               </div>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="btnBomba1" onchange="toggleActuador('bomba1', this.checked)">
-              <span class="slider"></span>
-            </label>
+            <div class="plug-indicator" title="Conectada directo a toma de corriente AC">
+              <i class="fa-solid fa-plug" style="color: var(--green-bright); font-size: 1.2rem;"></i>
+            </div>
           </div>
 
+          <!-- Bomba 2: Controlada por Relay desde ESP32 -->
           <div class="control-item">
             <div class="actuator-info">
               <i class="fa-solid fa-shower actuator-icon"></i>
@@ -169,11 +171,12 @@
             </label>
           </div>
 
+          <!-- Placa Peltier: Controlada por Relay desde ESP32 -->
           <div class="control-item">
             <div class="actuator-info">
               <i class="fa-solid fa-snowflake actuator-icon icon-peltier"></i>
               <div>
-                <strong>Placa Peltier</strong>
+                <strong>Placa Peltier (TEC1)</strong>
                 <span>Control manual de temperatura</span>
                 <div class="actuator-status" id="statusPeltier"><span class="status-dot"></span> APAGADA</div>
               </div>
@@ -183,6 +186,7 @@
               <span class="slider"></span>
             </label>
           </div>
+
         </div>
       </div>
 
@@ -191,9 +195,13 @@
           <h3><i class="fa-solid fa-leaf"></i> Tracker de Cultivo</h3>
           <p class="card-subtitle">Ciclo automático: 15 días Agua Pura + 15 días Solución Nutritiva.</p>
           
-          <div class="input-group-add">
-            <input type="text" id="tracker-input" placeholder="Ej: Lote Lechugas A1...">
-            <button class="btn-add" id="btn-add-tracker"><i class="fa-solid fa-plus"></i></button>
+          <div class="tracker-inputs-form">
+            <input type="text" id="tracker-input" placeholder="Nombre (ej. Lote A1)...">
+            <div class="tracker-inputs-row">
+              <input type="date" id="tracker-date-input" title="Fecha de inicio">
+              <input type="number" id="tracker-day-input" min="1" max="30" placeholder="Día actual (ej. 8)">
+              <button class="btn-add" id="btn-add-tracker"><i class="fa-solid fa-plus"></i></button>
+            </div>
           </div>
 
           <div id="tracker-container" class="tracker-list"></div>
