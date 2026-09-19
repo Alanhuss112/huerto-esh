@@ -48,8 +48,10 @@
 
   <div id="appContainer" class="app-container hidden">
     <header class="main-header">
-      <div class="brand-title">
-        <h1><i class="fa-solid fa-seedling brand-icon"></i> Huerto Hidropónico</h1>
+      <div class="header-branding">
+        <h1>PROPEDÉUTICO CIENCIAS BÁSICAS E INGENIERÍA</h1>
+        <h2>Escuela Superior de Huejutla</h2>
+        <h3><i class="fa-solid fa-seedling brand-icon"></i> HUERTO HIDROPÓNICO AUTOMATIZADO</h3>
         <p class="sub-brand">Desarrollado por la Cuadrilla de Programación</p>
       </div>
 
@@ -86,7 +88,7 @@
 
         <div class="card metric-card">
           <div class="card-header">
-            <span>Conductividad</span>
+            <span>Conductividad (CE)</span>
             <i class="fa-solid fa-bolt icon-ce"></i>
           </div>
           <div class="metric-value"><span id="ecValue">2.2</span> <small>mS/cm</small></div>
@@ -106,7 +108,7 @@
 
         <div class="card metric-card">
           <div class="card-header">
-            <span>Humedad</span>
+            <span>Humedad Relativa</span>
             <i class="fa-solid fa-droplet icon-hum"></i>
           </div>
           <div class="metric-value"><span id="humValue">68</span> <small>%</small></div>
@@ -136,7 +138,7 @@
       </div>
 
       <div class="card control-card">
-        <h3><i class="fa-solid fa-sliders"></i> Control de Dispositivos (ESP32)</h3>
+        <h3><i class="fa-solid fa-sliders"></i> Control de Potencia (ESP32)</h3>
         <div class="control-grid">
           <div class="control-item">
             <div class="actuator-info">
@@ -157,8 +159,8 @@
             <div class="actuator-info">
               <i class="fa-solid fa-snowflake actuator-icon icon-peltier"></i>
               <div>
-                <strong>Placa Peltier</strong>
-                <span>Control térmico de solución nutritiva</span>
+                <strong>Placa Peltier (TEC1)</strong>
+                <span>Climatización de tanque térmico</span>
                 <div class="actuator-status" id="statusPeltier"><span class="status-dot"></span> APAGADA</div>
               </div>
             </div>
@@ -172,45 +174,27 @@
 
       <div class="bottom-grid">
         <div class="card tracker-card">
-          <h3><i class="fa-solid fa-calendar-check"></i> Ciclo de Cultivo</h3>
-          <div class="tracker-form">
-            <div class="input-field">
-              <label for="cropName">Lote / Cultivo:</label>
-              <input type="text" id="cropName" placeholder="Ej. Germinado 1" onchange="guardarTracker()">
-            </div>
-            <div class="tracker-inputs-row">
-              <div class="input-field">
-                <label for="plantDate">Fecha de Inicio:</label>
-                <input type="date" id="plantDate" onchange="guardarTracker()">
-              </div>
-              <div class="input-field">
-                <label for="manualDays">Días Previos:</label>
-                <input type="number" id="manualDays" min="0" placeholder="0" onchange="guardarTracker()">
-              </div>
-            </div>
-            <div class="tracker-stats">
-              <div>Días Transcurridos: <b id="daysElapsed">0</b> / 30</div>
-              <div id="growthStage">Estado: Fase 1 - Agua Pura (Días 1-15)</div>
-            </div>
+          <h3><i class="fa-solid fa-leaf"></i> Tracker de Cultivo</h3>
+          <p class="card-subtitle">Ciclo automático: 15 días Agua Pura + 15 días Solución Nutritiva.</p>
+          
+          <div class="input-group-add">
+            <input type="text" id="tracker-input" placeholder="Ej: Lote Lechugas A1...">
+            <button class="btn-add" id="btn-add-tracker"><i class="fa-solid fa-plus"></i></button>
           </div>
+
+          <div id="tracker-container" class="tracker-list"></div>
         </div>
 
         <div class="card checklist-card">
-          <h3><i class="fa-solid fa-list-check"></i> Checklist Mantenimiento</h3>
-          <ul class="checklist-items">
-            <li>
-              <label><input type="checkbox" id="chk1" onchange="guardarChecklist()"> Verificar flujo en cámara de muestreo</label>
-            </li>
-            <li>
-              <label><input type="checkbox" id="chk2" onchange="guardarChecklist()"> Revisar disipador de placa Peltier</label>
-            </li>
-            <li>
-              <label><input type="checkbox" id="chk3" onchange="guardarChecklist()"> Inspeccionar nivel de solución nutritiva</label>
-            </li>
-            <li>
-              <label><input type="checkbox" id="chk4" onchange="guardarChecklist()"> Calibrar sondas analógicas</label>
-            </li>
-          </ul>
+          <h3><i class="fa-solid fa-list-check"></i> Checklist Operativo</h3>
+          <p class="card-subtitle">Gestión de tareas de mantenimiento del huerto.</p>
+
+          <div class="input-group-add">
+            <input type="text" id="task-input" placeholder="Ej: Calibrar sonda de CE...">
+            <button class="btn-add" id="btn-add-task"><i class="fa-solid fa-plus"></i></button>
+          </div>
+
+          <div class="task-list" id="task-container"></div>
         </div>
       </div>
     </main>

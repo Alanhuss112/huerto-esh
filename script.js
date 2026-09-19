@@ -17,6 +17,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (localStorage.getItem("hidro_logged_in") === "true") {
     mostrarInterfaz();
   }
+
+  document.getElementById('btn-add-tracker').addEventListener('click', addTracker);
+  document.getElementById('tracker-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addTracker(); });
+
+  document.getElementById('btn-add-task').addEventListener('click', addTask);
+  document.getElementById('task-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addTask(); });
 });
 
 function toggleMostrarPass() {
@@ -50,7 +56,7 @@ function autenticar() {
 function mostrarInterfaz() {
   document.getElementById("loginOverlay").classList.add("hidden");
   document.getElementById("appContainer").classList.remove("hidden");
-  cambiarMetricaGrafica();
+  setTimeout(cambiarMetricaGrafica, 50);
 }
 
 function cerrarSesion() {
@@ -90,6 +96,7 @@ function inicializarGrafica() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 400 },
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: '#9db8ae' }, grid: { color: 'rgba(255, 255, 255, 0.035)' } },
@@ -131,62 +138,107 @@ function toggleActuador(actuador, estado) {
   }
 }
 
-function guardarChecklist() {
-  const checklistState = {
-    chk1: document.getElementById("chk1").checked,
-    chk2: document.getElementById("chk2").checked,
-    chk3: document.getElementById("chk3").checked,
-    chk4: document.getElementById("chk4").checked
-  };
-  localStorage.setItem("hidro_checklist", JSON.stringify(checklistState));
+function addTracker(title = "", day = 1) {
+  const input = document.getElementById('tracker-input');
+  const name = title || input.value.trim();
+  if (!name) return;
+
+  const container = document.getElementById('tracker-container');
+  const newTracker = document.createElement('div');
+  newTracker.className = 'tracker-item';
+  
+  const percentage = Math.min(100, Math.max(0, (day / 30) * 100));
+
+  newTracker.innerHTML = `
+    <div class="tracker-top">
+        <span class="tracker-title">${name}</span>
+        <span class="tracker-days">Día ${day} / 30</span>
+    </div>
+    <div class="tracker-visual-bar">
+        <div class="fase-agua">Fase 1: Agua</div>
+        <div class="fase-nutri">Fase 2: Solución 50%</div>
+        <div class="tracker-cursor" style="left: ${percentage}%;"></div>
+    </div>
+    <div class="tracker-dates">
+        <span>Inicio: Hoy</span>
+        <span>Cambio: +15d</span>
+        <span>Cosecha: +30d</span>
+    </div>
+  `;
+
+  container.appendChild(newTracker);
+  if (!title) input.value = '';
+  guardarTrackers();
 }
 
-function guardarTracker() {
-  const trackerState = {
-    cropName: document.getElementById("cropName").value,
-    plantDate: document.getElementById("plantDate").value,
-    manualDays: document.getElementById("manualDays").value
-  };
-  localStorage.setItem("hidro_tracker", JSON.stringify(trackerState));
-  calcularDiasTranscurridos();
+function guardarTrackers() {
+  const items = [];
+  document.querySelectorAll('.tracker-item').forEach(el => {
+    const title = el.querySelector('.tracker-title').innerText;
+    const daysText = el.querySelector('.tracker-days').innerText;
+    const day = parseInt(daysText.match(/\d+/)[0]) || 1;
+    items.push({ title, day });
+  });
+  localStorage.setItem('hidro_trackers_list', JSON.stringify(items));
+}
+
+function addTask(text = "", completed = false) {
+  const input = document.getElementById('task-input');
+  const taskText = text || input.value.trim();
+  if (!taskText) return;
+
+  const container = document.getElementById('task-container');
+  const newTask = document.createElement('div');
+  newTask.className = `task-item ${completed ? 'completed' : ''}`;
+  newTask.innerHTML = `
+      <div class="task-checkbox"><i class="fa-solid fa-check"></i></div>
+      <span class="task-text">${taskText}</span>
+      <button class="task-delete"><i class="fa-solid fa-xmark"></i></button>
+  `;
+  
+  newTask.addEventListener('click', function(e) {
+      if (!e.target.closest('.task-delete')) {
+          this.classList.toggle('completed');
+          guardarTasks();
+      }
+  });
+
+  newTask.querySelector('.task-delete').addEventListener('click', (e) => {
+      e.stopPropagation();
+      newTask.style.opacity = '0';
+      setTimeout(() => {
+        newTask.remove();
+        guardarTasks();
+      }, 300);
+  });
+
+  container.appendChild(newTask);
+  if (!text) input.value = '';
+  guardarTasks();
+}
+
+function guardarTasks() {
+  const tasks = [];
+  document.querySelectorAll('.task-item').forEach(el => {
+    const text = el.querySelector('.task-text').innerText;
+    const completed = el.classList.contains('completed');
+    tasks.push({ text, completed });
+  });
+  localStorage.setItem('hidro_tasks_list', JSON.stringify(tasks));
 }
 
 function cargarDatosGuardados() {
-  const savedChecklist = JSON.parse(localStorage.getItem("hidro_checklist"));
-  if (savedChecklist) {
-    document.getElementById("chk1").checked = savedChecklist.chk1 || false;
-    document.getElementById("chk2").checked = savedChecklist.chk2 || false;
-    document.getElementById("chk3").checked = savedChecklist.chk3 || false;
-    document.getElementById("chk4").checked = savedChecklist.chk4 || false;
-  }
-
-  const savedTracker = JSON.parse(localStorage.getItem("hidro_tracker"));
-  if (savedTracker) {
-    document.getElementById("cropName").value = savedTracker.cropName || "";
-    document.getElementById("plantDate").value = savedTracker.plantDate || "";
-    document.getElementById("manualDays").value = savedTracker.manualDays || "";
-    calcularDiasTranscurridos();
-  }
-}
-
-function calcularDiasTranscurridos() {
-  const dateVal = document.getElementById("plantDate").value;
-  const manualOffset = parseInt(document.getElementById("manualDays").value) || 0;
-  
-  let totalDays = manualOffset;
-
-  if (dateVal) {
-    const inicio = new Date(dateVal);
-    const hoy = new Date();
-    const diffDays = Math.max(0, Math.ceil((hoy - inicio) / (1000 * 60 * 60 * 24)) - 1);
-    totalDays += diffDays;
-  }
-
-  document.getElementById("daysElapsed").innerText = totalDays;
-
-  if (totalDays <= 15) {
-    document.getElementById("growthStage").innerText = "Estado: Fase 1 - Agua Pura (Días 1-15)";
+  const savedTrackers = JSON.parse(localStorage.getItem('hidro_trackers_list'));
+  if (savedTrackers && savedTrackers.length > 0) {
+    savedTrackers.forEach(item => addTracker(item.title, item.day));
   } else {
-    document.getElementById("growthStage").innerText = "Estado: Fase 2 - Solución 50% (Días 16-30)";
+    addTracker('Germinado de Prueba', 8);
+  }
+
+  const savedTasks = JSON.parse(localStorage.getItem('hidro_tasks_list'));
+  if (savedTasks && savedTasks.length > 0) {
+    savedTasks.forEach(task => addTask(task.text, task.completed));
+  } else {
+    addTask('Revisar nivel del tanque principal', false);
   }
 }
