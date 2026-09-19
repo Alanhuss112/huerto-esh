@@ -7,12 +7,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <div id="loginOverlay" class="login-overlay">
-    <div class="login-card">
+    <div class="login-card" id="loginCard">
       <div class="login-avatar">
         <i class="fa-solid fa-seedling"></i>
       </div>
@@ -29,6 +31,10 @@
           <i class="fa-solid fa-lock input-icon"></i>
           <input type="password" id="passInput" placeholder="Contraseña" required autocomplete="current-password">
           <i class="fa-solid fa-eye toggle-password" id="togglePassword" onclick="toggleMostrarPass()"></i>
+        </div>
+
+        <div id="loginErrorMsg" class="login-error-msg hidden">
+          <i class="fa-solid fa-circle-exclamation"></i> Usuario o contraseña incorrectos
         </div>
 
         <div class="login-options">
@@ -55,9 +61,9 @@
       </div>
 
       <div class="system-status-bar">
-        <div class="status-indicator online" id="statusBadge">
+        <div class="status-indicator offline" id="statusBadge">
           <span class="dot"></span>
-          <span id="statusText">ESP32 Conectado</span>
+          <span id="statusText">ESP32 Desconectado</span>
         </div>
         <div class="time-display">
           <i class="fa-regular fa-clock"></i>
@@ -80,8 +86,8 @@
             <span>pH del Agua</span>
             <i class="fa-solid fa-flask icon-ph"></i>
           </div>
-          <div class="metric-value"><span id="phValue">6.2</span> <small>pH</small></div>
-          <div class="progress-bar"><div class="progress-fill fill-ph" style="width: 70%;"></div></div>
+          <div class="metric-value"><span id="phValue">--</span> <small>pH</small></div>
+          <div class="progress-bar"><div class="progress-fill fill-ph" id="phBar" style="width: 0%;"></div></div>
           <div class="metric-footer"><span>Óptimo: 5.5 - 6.5</span></div>
         </div>
 
@@ -90,8 +96,8 @@
             <span>Conductividad (CE)</span>
             <i class="fa-solid fa-bolt icon-ce"></i>
           </div>
-          <div class="metric-value"><span id="ecValue">1.8</span> <small>mS/cm</small></div>
-          <div class="progress-bar"><div class="progress-fill fill-ce" style="width: 80%;"></div></div>
+          <div class="metric-value"><span id="ecValue">--</span> <small>mS/cm</small></div>
+          <div class="progress-bar"><div class="progress-fill fill-ce" id="ecBar" style="width: 0%;"></div></div>
           <div class="metric-footer"><span>Óptimo: 2.0 - 2.5</span></div>
         </div>
 
@@ -100,8 +106,8 @@
             <span>Temperatura</span>
             <i class="fa-solid fa-temperature-half icon-temp"></i>
           </div>
-          <div class="metric-value"><span id="tempValue">26.4</span> <small>°C</small></div>
-          <div class="progress-bar"><div class="progress-fill fill-temp" style="width: 45%;"></div></div>
+          <div class="metric-value"><span id="tempValue">--</span> <small>°C</small></div>
+          <div class="progress-bar"><div class="progress-fill fill-temp" id="tempBar" style="width: 0%;"></div></div>
           <div class="metric-footer"><span>Óptimo: 18°C - 27°C</span></div>
         </div>
 
@@ -110,15 +116,15 @@
             <span>Humedad Relativa</span>
             <i class="fa-solid fa-droplet icon-hum"></i>
           </div>
-          <div class="metric-value"><span id="humValue">67</span> <small>%</small></div>
-          <div class="progress-bar"><div class="progress-fill fill-hum" style="width: 67%;"></div></div>
+          <div class="metric-value"><span id="humValue">--</span> <small>%</small></div>
+          <div class="progress-bar"><div class="progress-fill fill-hum" id="humBar" style="width: 0%;"></div></div>
           <div class="metric-footer"><span>Ambiente</span></div>
         </div>
       </div>
 
-      <div class="status-banner">
-        <i class="fa-solid fa-circle-check"></i>
-        <span>Sistema funcionando correctamente</span>
+      <div class="status-banner" id="systemBanner">
+        <i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i>
+        <span>Esperando la primera conexión del ESP32...</span>
       </div>
 
       <div class="card chart-card">
@@ -139,8 +145,6 @@
       <div class="card control-card">
         <h3><i class="fa-solid fa-microchip"></i> Control de Dispositivos (ESP32)</h3>
         <div class="control-grid">
-          
-          <!-- Bomba 1: Indicador de conexión permanente (Sin switch) -->
           <div class="control-item">
             <div class="actuator-info">
               <i class="fa-solid fa-faucet-drip actuator-icon"></i>
@@ -155,7 +159,6 @@
             </div>
           </div>
 
-          <!-- Bomba 2: Controlada por Relay desde ESP32 -->
           <div class="control-item">
             <div class="actuator-info">
               <i class="fa-solid fa-shower actuator-icon"></i>
@@ -171,7 +174,6 @@
             </label>
           </div>
 
-          <!-- Placa Peltier: Controlada por Relay desde ESP32 -->
           <div class="control-item">
             <div class="actuator-info">
               <i class="fa-solid fa-snowflake actuator-icon icon-peltier"></i>
@@ -186,7 +188,6 @@
               <span class="slider"></span>
             </label>
           </div>
-
         </div>
       </div>
 

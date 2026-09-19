@@ -1,13 +1,21 @@
-let sensorChart;
-
-const historyData = {
-  ph: [6.1, 6.2, 6.4, 6.5, 6.3, 6.2, 6.2],
-  temperatura: [21.5, 22.0, 23.8, 25.4, 26.0, 24.8, 22.5],
-  ec: [1.6, 1.7, 1.8, 1.9, 1.8, 1.8, 1.8],
-  humedad: [72, 70, 68, 65, 66, 67, 67]
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "tu-proyecto.firebaseapp.com",
+  databaseURL: "https://tu-proyecto-rtbd.firebaseio.com",
+  projectId: "tu-proyecto",
+  storageBucket: "tu-proyecto.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
 };
 
-const labelsHora = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', 'Ahora'];
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const database = firebase.database();
+
+let sensorChart;
+const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
+const labelsHora = [];
 
 const configMap = {
   ph: { label: 'Potencial de Hidrógeno (pH)', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
@@ -18,8 +26,8 @@ const configMap = {
 
 document.addEventListener("DOMContentLoaded", () => {
   iniciarReloj();
-  cargarDatosGuardados();
   inicializarGrafica();
+  escucharFirebase();
   
   if (localStorage.getItem("hidro_logged_in") === "true") {
     mostrarInterfaz();
@@ -49,14 +57,20 @@ function autenticar() {
   const user = document.getElementById("userInput").value;
   const pass = document.getElementById("passInput").value;
   const remember = document.getElementById("rememberMe").checked;
+  const loginCard = document.getElementById("loginCard");
+  const errorMsg = document.getElementById("loginErrorMsg");
 
   if (user === "Hidroponico2026" && pass === "Programav1") {
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
     }
+    errorMsg.classList.add("hidden");
     mostrarInterfaz();
   } else {
-    alert("Usuario o contraseña incorrectos");
+    loginCard.classList.remove("shake");
+    void loginCard.offsetWidth;
+    loginCard.classList.add("shake");
+    errorMsg.classList.remove("hidden");
   }
 }
 
@@ -81,22 +95,23 @@ function iniciarReloj() {
 
 function inicializarGrafica() {
   const ctx = document.getElementById('sensorChart').getContext('2d');
-  const initialConfig = configMap.ph;
+  const selectedKey = document.getElementById('chartSelect').value || 'ph';
+  const currentConfig = configMap[selectedKey];
   
   sensorChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labelsHora,
       datasets: [{
-        label: initialConfig.label,
-        data: historyData.ph,
-        borderColor: initialConfig.color,
-        backgroundColor: initialConfig.bg,
+        label: currentConfig.label,
+        data: historyData[selectedKey],
+        borderColor: currentConfig.color,
+        backgroundColor: currentConfig.bg,
         borderWidth: 3,
         tension: 0.35,
         fill: true,
         pointBackgroundColor: '#ffffff',
-        pointBorderColor: initialConfig.color,
+        pointBorderColor: currentConfig.color,
         pointRadius: 4,
         pointHoverRadius: 6
       }]
@@ -118,41 +133,139 @@ function cambiarMetricaGrafica() {
   const metricKey = document.getElementById('chartSelect').value;
   const current = configMap[metricKey] || configMap.ph;
 
-  if (!sensorChart) return;
+  if (sensorChart) {
+    sensorChart.destroy();
+  }
 
-  const dataset = sensorChart.data.datasets[0];
-  dataset.label = current.label;
-  dataset.data = historyData[metricKey];
-  dataset.borderColor = current.color;
-  dataset.backgroundColor = current.bg;
-  dataset.pointBorderColor = current.color;
-
-  sensorChart.update();
+  const ctx = document.getElementById('sensorChart').getContext('2d');
+  sensorChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labelsHora,
+      datasets: [{
+        label: current.label,
+        data: historyData[metricKey],
+        borderColor: current.color,
+        backgroundColor: current.bg,
+        borderWidth: 3,
+        tension: 0.35,
+        fill: true,
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: current.color,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#9db8ae' }, grid: { color: 'rgba(255, 255, 255, 0.035)' } },
+        y: { ticks: { color: '#9db8ae' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+      }
+    }
+  });
 }
 
 function toggleActuador(actuador, estado) {
-  if (actuador === 'bomba_muestreo') {
-    const statusBox = document.getElementById('statusBomba2');
-    statusBox.classList.toggle('on', estado);
-    statusBox.innerHTML = `<span class="status-dot"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
-  } else if (actuador === 'peltier') {
-    const statusBox = document.getElementById('statusPeltier');
-    statusBox.classList.toggle('on', estado);
-    statusBox.innerHTML = `<span class="status-dot"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
-  }
+  database.ref('actuadores/' + actuador).set(estado);
 }
 
-function addTracker(title = "", initialDay = null, startDateStr = "") {
+function escucharFirebase() {
+  database.ref('sensores').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      document.getElementById('statusBadge').className = "status-indicator online";
+      document.getElementById('statusText').innerText = "ESP32 Conectado";
+      document.getElementById('systemBanner').innerHTML = `
+        <i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i>
+        <span>Sistema funcionando correctamente</span>
+      `;
+
+      document.getElementById('phValue').innerText = data.ph ? data.ph.toFixed(1) : '--';
+      document.getElementById('ecValue').innerText = data.ec ? data.ec.toFixed(1) : '--';
+      document.getElementById('tempValue').innerText = data.temperatura ? data.temperatura.toFixed(1) : '--';
+      document.getElementById('humValue').innerText = data.humedad ? Math.round(data.humedad) : '--';
+
+      if (data.ph) document.getElementById('phBar').style.width = Math.min(100, (data.ph / 14) * 100) + '%';
+      if (data.ec) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
+      if (data.temperatura) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
+      if (data.humedad) document.getElementById('humBar').style.width = data.humedad + '%';
+
+      const horaActual = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+      labelsHora.push(horaActual);
+      historyData.ph.push(data.ph);
+      historyData.temperatura.push(data.temperatura);
+      historyData.ec.push(data.ec);
+      historyData.humedad.push(data.humedad);
+
+      if (labelsHora.length > 10) {
+        labelsHora.shift();
+        historyData.ph.shift();
+        historyData.temperatura.shift();
+        historyData.ec.shift();
+        historyData.humedad.shift();
+      }
+
+      cambiarMetricaGrafica();
+    }
+  });
+
+ 
+  database.ref('trackers').on('value', (snapshot) => {
+    const container = document.getElementById('tracker-container');
+    container.innerHTML = '';
+    const trackers = snapshot.val();
+
+    if (trackers) {
+      Object.keys(trackers).forEach(key => {
+        const item = trackers[key];
+        renderTrackerItem(key, item.title, item.startDay, item.startDate);
+      });
+    }
+  });
+
+ 
+  database.ref('tasks').on('value', (snapshot) => {
+    const container = document.getElementById('task-container');
+    container.innerHTML = '';
+    const tasks = snapshot.val();
+
+    if (tasks) {
+      Object.keys(tasks).forEach(key => {
+        const task = tasks[key];
+        renderTaskItem(key, task.text, task.completed);
+      });
+    }
+  });
+}
+
+function addTracker() {
   const nameInput = document.getElementById('tracker-input');
   const dateInput = document.getElementById('tracker-date-input');
   const dayInput = document.getElementById('tracker-day-input');
 
-  const name = (typeof title === 'string' && title.length > 0) ? title : nameInput.value.trim();
+  const name = nameInput.value.trim();
   if (!name) return;
 
-  let startDate = startDateStr ? new Date(startDateStr) : (dateInput.value ? new Date(dateInput.value) : new Date());
-  let startDay = initialDay !== null ? parseInt(initialDay) : (parseInt(dayInput.value) || 1);
+  const startDate = dateInput.value || new Date().toISOString().split('T')[0];
+  const startDay = parseInt(dayInput.value) || 1;
 
+  database.ref('trackers').push({
+    title: name,
+    startDate: startDate,
+    startDay: startDay
+  });
+
+  nameInput.value = '';
+  dayInput.value = '';
+  dateInput.value = '';
+}
+
+function renderTrackerItem(key, title, startDay, startDateStr) {
+  const startDate = new Date(startDateStr);
   const hoy = new Date();
   const diffTime = Math.max(0, hoy - startDate);
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -160,17 +273,13 @@ function addTracker(title = "", initialDay = null, startDateStr = "") {
   let currentDay = Math.min(30, Math.max(1, startDay + diffDays));
   const percentage = Math.min(100, Math.max(0, (currentDay / 30) * 100));
 
-  const fechaFormateada = startDate.toISOString().split('T')[0];
-
   const container = document.getElementById('tracker-container');
   const newTracker = document.createElement('div');
   newTracker.className = 'tracker-item';
-  newTracker.dataset.startDate = fechaFormateada;
-  newTracker.dataset.startDay = startDay;
 
   newTracker.innerHTML = `
     <div class="tracker-header">
-        <span class="tracker-title">${name}</span>
+        <span class="tracker-title">${title}</span>
         <div class="tracker-actions">
             <span class="tracker-days">Día ${currentDay} / 30</span>
             <button class="tracker-delete"><i class="fa-solid fa-xmark"></i></button>
@@ -182,93 +291,52 @@ function addTracker(title = "", initialDay = null, startDateStr = "") {
         <div class="tracker-cursor" style="left: ${percentage}%;"></div>
     </div>
     <div class="tracker-dates">
-        <span>Inicio: ${fechaFormateada}</span>
+        <span>Inicio: ${startDateStr}</span>
         <span>Cambio: +15d</span>
         <span>Cosecha: +30d</span>
     </div>
   `;
 
   newTracker.querySelector('.tracker-delete').addEventListener('click', () => {
-    newTracker.remove();
-    guardarTrackers();
+    database.ref('trackers/' + key).remove();
   });
 
   container.appendChild(newTracker);
-
-  nameInput.value = '';
-  dayInput.value = '';
-  dateInput.value = '';
-  guardarTrackers();
 }
 
-function guardarTrackers() {
-  const items = [];
-  document.querySelectorAll('.tracker-item').forEach(el => {
-    const title = el.querySelector('.tracker-title').innerText;
-    const startDate = el.dataset.startDate;
-    const startDay = parseInt(el.dataset.startDay) || 1;
-    items.push({ title, startDate, startDay });
-  });
-  localStorage.setItem('hidro_trackers_list', JSON.stringify(items));
-}
-
-function addTask(text = "", completed = false) {
+function addTask() {
   const input = document.getElementById('task-input');
-  const taskText = (typeof text === 'string' && text.length > 0) ? text : input.value.trim();
-  if (!taskText) return;
+  const text = input.value.trim();
+  if (!text) return;
 
+  database.ref('tasks').push({
+    text: text,
+    completed: false
+  });
+
+  input.value = '';
+}
+
+function renderTaskItem(key, text, completed) {
   const container = document.getElementById('task-container');
   const newTask = document.createElement('div');
   newTask.className = `task-item ${completed ? 'completed' : ''}`;
   newTask.innerHTML = `
       <div class="task-checkbox"><i class="fa-solid fa-check"></i></div>
-      <span class="task-text">${taskText}</span>
+      <span class="task-text">${text}</span>
       <button class="task-delete"><i class="fa-solid fa-xmark"></i></button>
   `;
   
   newTask.addEventListener('click', function(e) {
       if (!e.target.closest('.task-delete')) {
-          this.classList.toggle('completed');
-          guardarTasks();
+          database.ref('tasks/' + key + '/completed').set(!completed);
       }
   });
 
   newTask.querySelector('.task-delete').addEventListener('click', (e) => {
       e.stopPropagation();
-      newTask.style.opacity = '0';
-      setTimeout(() => {
-        newTask.remove();
-        guardarTasks();
-      }, 300);
+      database.ref('tasks/' + key).remove();
   });
 
   container.appendChild(newTask);
-  input.value = '';
-  guardarTasks();
-}
-
-function guardarTasks() {
-  const tasks = [];
-  document.querySelectorAll('.task-item').forEach(el => {
-    const text = el.querySelector('.task-text').innerText;
-    const completed = el.classList.contains('completed');
-    tasks.push({ text, completed });
-  });
-  localStorage.setItem('hidro_tasks_list', JSON.stringify(tasks));
-}
-
-function cargarDatosGuardados() {
-  const savedTrackers = JSON.parse(localStorage.getItem('hidro_trackers_list'));
-  if (savedTrackers && savedTrackers.length > 0) {
-    savedTrackers.forEach(item => addTracker(item.title, item.startDay, item.startDate));
-  } else {
-    addTracker('Germinado de Prueba', 8, new Date().toISOString().split('T')[0]);
-  }
-
-  const savedTasks = JSON.parse(localStorage.getItem('hidro_tasks_list'));
-  if (savedTasks && savedTasks.length > 0) {
-    savedTasks.forEach(task => addTask(task.text, task.completed));
-  } else {
-    addTask('Revisar nivel del tanque principal', false);
-  }
 }
