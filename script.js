@@ -1,197 +1,162 @@
+let mainChart;
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCPr2QN1gvo5Ngekcos86uo2maX_mHRGF0",
-  authDomain: "huerto-hidroponico-esh.firebaseapp.com",
-  databaseURL: "https://huerto-hidroponico-esh-default-rtdb.firebaseio.com",
-  projectId: "huerto-hidroponico-esh",
-  storageBucket: "huerto-hidroponico-esh.firebasestorage.app",
-  messagingSenderId: "380114491557",
-  appId: "1:380114491557:web:bf85a1b207638093abd54c",
-  measurementId: "G-DGXDEVKXZ0"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-const btnLogin = document.getElementById('btn-login');
-const passInput = document.getElementById('password');
-
-function checkLogin() {
-    const user = document.getElementById('username').value;
-    const pass = passInput.value;
-    
-    if (user === 'Hidroponico2026' && pass === 'Programav1') {
-        document.getElementById('login-overlay').style.opacity = '0';
-        setTimeout(() => {
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            initChart();
-            initFirebaseListeners(); 
-        }, 300);
-    } else {
-        document.getElementById('login-error').style.display = 'block';
-    }
-}
-
-btnLogin.addEventListener('click', checkLogin);
-passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkLogin(); });
-
-function initFirebaseListeners() {
-    const sensoresRef = ref(db, 'sensores');
-    onValue(sensoresRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            if (data.ph !== undefined) {
-                document.getElementById('val-ph').innerText = data.ph;
-                document.getElementById('bar-ph').style.width = Math.min(100, (data.ph / 14) * 100) + '%';
-            }
-            if (data.ce !== undefined) {
-                document.getElementById('val-ce').innerText = data.ce;
-                document.getElementById('bar-ce').style.width = Math.min(100, (data.ce / 3.0) * 100) + '%';
-            }
-            if (data.temp !== undefined) {
-                document.getElementById('val-temp').innerText = data.temp;
-                document.getElementById('bar-temp').style.width = Math.min(100, (data.temp / 40) * 100) + '%';
-            }
-            if (data.humedad !== undefined) {
-                document.getElementById('val-hum').innerText = data.humedad;
-                document.getElementById('bar-hum').style.width = data.humedad + '%';
-            }
-        }
-    });
-
-    setupActuator('sw-bomba1', 'actuadores/bomba1');
-    setupActuator('sw-bomba2', 'actuadores/bomba2');
-    setupActuator('sw-peltier', 'actuadores/peltier');
-}
-
-function setupActuator(elementId, dbPath) {
-    const el = document.getElementById(elementId);
-
-    onValue(ref(db, dbPath), (snapshot) => {
-        const val = snapshot.val();
-        if (val !== null) el.checked = val;
-    });
-
-    el.addEventListener('change', () => {
-        set(ref(db, dbPath), el.checked);
-    });
-}
-
-let myChart;
-const chartData = {
-    ph: { data: [6.1, 6.2, 6.4, 6.5, 6.3, 6.2, 6.2], color: '#00f0ff' },
-    temperatura: { data: [22.5, 23.0, 24.5, 26.1, 25.0, 24.5, 24.5], color: '#b026ff' },
-    ec: { data: [2.0, 2.1, 2.3, 2.4, 2.3, 2.2, 2.2], color: '#39ff14' }
-};
-const labels = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', 'Ahora'];
-
-function initChart() {
-    const ctx = document.getElementById('sensorChart').getContext('2d');
-    Chart.defaults.color = '#8b949e';
-    Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-
-    myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Historial',
-                data: chartData.ph.data,
-                borderColor: chartData.ph.color,
-                backgroundColor: chartData.ph.color + '22',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true,
-                pointBackgroundColor: '#0d1117',
-                pointBorderColor: chartData.ph.color,
-                pointRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-}
-
-document.getElementById('chartSelector').addEventListener('change', (e) => {
-    const selectedData = chartData[e.target.value];
-    myChart.data.datasets[0].data = selectedData.data;
-    myChart.data.datasets[0].borderColor = selectedData.color;
-    myChart.data.datasets[0].backgroundColor = selectedData.color + '22';
-    myChart.data.datasets[0].pointBorderColor = selectedData.color;
-    myChart.update();
+document.addEventListener("DOMContentLoaded", () => {
+  iniciarReloj();
+  cargarDatosGuardados();
+  inicializarGrafica();
+  
+  if (localStorage.getItem("hidro_logged_in") === "true") {
+    mostrarInterfaz();
+  }
 });
 
-document.getElementById('btn-add-tracker').addEventListener('click', addTracker);
-document.getElementById('tracker-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addTracker(); });
-
-function addTracker() {
-    const input = document.getElementById('tracker-input');
-    const name = input.value.trim();
-    if (!name) return;
-
-    const container = document.getElementById('tracker-container');
-    const newTracker = document.createElement('div');
-    newTracker.className = 'tracker-item';
-    newTracker.innerHTML = `
-        <div class="tracker-top">
-            <span class="tracker-title">${name}</span>
-            <span class="tracker-days">Día 1 / 30</span>
-        </div>
-        <div class="tracker-visual-bar">
-            <div class="fase-agua">Fase 1: Agua</div>
-            <div class="fase-nutri">Fase 2: Solución 50%</div>
-            <div class="tracker-cursor" style="left: 3.33%;"></div>
-        </div>
-        <div class="tracker-dates">
-            <span>Inicio: Hoy</span>
-            <span>Cambio: +15d</span>
-            <span>Cosecha: +30d</span>
-        </div>
-    `;
-    container.appendChild(newTracker);
-    input.value = '';
+// ================= AUTENTICACIÓN =================
+function toggleMostrarPass() {
+  const passInput = document.getElementById("passInput");
+  const toggleIcon = document.getElementById("togglePassword");
+  
+  if (passInput.type === "password") {
+    passInput.type = "text";
+    toggleIcon.classList.replace("fa-eye", "fa-eye-slash");
+  } else {
+    passInput.type = "password";
+    toggleIcon.classList.replace("fa-eye-slash", "fa-eye");
+  }
 }
 
-document.getElementById('btn-add-task').addEventListener('click', addTask);
-document.getElementById('task-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addTask(); });
+function autenticar() {
+  const user = document.getElementById("userInput").value;
+  const pass = document.getElementById("passInput").value;
+  const remember = document.getElementById("rememberMe").checked;
 
-function addTask() {
-    const input = document.getElementById('task-input');
-    const task = input.value.trim();
-    if (!task) return;
+  if (user === "Hidroponico2026" && pass === "Programav1") {
+    if (remember) {
+      localStorage.setItem("hidro_logged_in", "true");
+    }
+    mostrarInterfaz();
+  } else {
+    alert("Usuario o contraseña incorrectos");
+  }
+}
 
-    const container = document.getElementById('task-container');
-    const newTask = document.createElement('div');
-    newTask.className = 'task-item';
-    newTask.innerHTML = `
-        <div class="task-checkbox"><i class="fa-solid fa-check"></i></div>
-        <span class="task-text">${task}</span>
-        <button class="task-delete"><i class="fa-solid fa-xmark"></i></button>
-    `;
-    
-    newTask.addEventListener('click', function(e) {
-        if (!e.target.closest('.task-delete')) {
-            this.classList.toggle('completed');
+function mostrarInterfaz() {
+  document.getElementById("loginOverlay").classList.add("hidden");
+  document.getElementById("appContainer").classList.remove("hidden");
+}
+
+function cerrarSesion() {
+  localStorage.removeItem("hidro_logged_in");
+  document.getElementById("appContainer").classList.add("hidden");
+  document.getElementById("loginOverlay").classList.remove("hidden");
+}
+
+// ================= RELOJ Y ESTADO =================
+function iniciarReloj() {
+  setInterval(() => {
+    const ahora = new Date();
+    document.getElementById("liveClock").innerText = ahora.toLocaleTimeString('es-MX');
+  }, 1000);
+}
+
+// ================= PERSISTENCIA DE DATOS =================
+function guardarChecklist() {
+  const checklistState = {
+    chk1: document.getElementById("chk1").checked,
+    chk2: document.getElementById("chk2").checked,
+    chk3: document.getElementById("chk3").checked,
+    chk4: document.getElementById("chk4").checked
+  };
+  localStorage.setItem("hidro_checklist", JSON.stringify(checklistState));
+}
+
+function guardarTracker() {
+  const trackerState = {
+    cropName: document.getElementById("cropName").value,
+    plantDate: document.getElementById("plantDate").value
+  };
+  localStorage.setItem("hidro_tracker", JSON.stringify(trackerState));
+  calcularDiasTranscurridos();
+}
+
+function cargarDatosGuardados() {
+  const savedChecklist = JSON.parse(localStorage.getItem("hidro_checklist"));
+  if (savedChecklist) {
+    document.getElementById("chk1").checked = savedChecklist.chk1 || false;
+    document.getElementById("chk2").checked = savedChecklist.chk2 || false;
+    document.getElementById("chk3").checked = savedChecklist.chk3 || false;
+    document.getElementById("chk4").checked = savedChecklist.chk4 || false;
+  }
+
+  const savedTracker = JSON.parse(localStorage.getItem("hidro_tracker"));
+  if (savedTracker) {
+    document.getElementById("cropName").value = savedTracker.cropName || "";
+    document.getElementById("plantDate").value = savedTracker.plantDate || "";
+    calcularDiasTranscurridos();
+  }
+}
+
+function calcularDiasTranscurridos() {
+  const dateVal = document.getElementById("plantDate").value;
+  if (dateVal) {
+    const inicio = new Date(dateVal);
+    const hoy = new Date();
+    const diffTime = Math.abs(hoy - inicio);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1;
+    const dias = diffDays >= 0 ? diffDays : 0;
+    document.getElementById("daysElapsed").innerText = dias;
+
+    if (dias <= 15) {
+      document.getElementById("growthStage").innerText = "Fase 1: Agua Pura (Días 1-15)";
+    } else {
+      document.getElementById("growthStage").innerText = "Fase 2: Solución al 50% (Días 16-30)";
+    }
+  }
+}
+
+// ================= CONTROL DE ACTUADORES =================
+function toggleActuador(actuador, estado) {
+  console.log(`Actuador ${actuador} cambiado a: ${estado}`);
+  // Sincronización con Firebase Realtime Database
+}
+
+// ================= GRÁFICA DE MONITOREO =================
+function inicializarGrafica() {
+  const ctx = document.getElementById('realtimeChart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+      datasets: [
+        {
+          label: 'pH (Agua)',
+          data: [6.1, 6.2, 6.4, 6.5, 6.3, 6.2],
+          borderColor: '#00f0ff',
+          tension: 0.4
+        },
+        {
+          label: 'Conductividad CE (mS/cm)',
+          data: [2.0, 2.1, 2.3, 2.4, 2.3, 2.2],
+          borderColor: '#35e58a',
+          tension: 0.4
+        },
+        {
+          label: 'Temp Agua (°C)',
+          data: [21.5, 22.0, 23.5, 24.5, 23.0, 22.5],
+          borderColor: '#18b86a',
+          tension: 0.4
         }
-    });
-
-    newTask.querySelector('.task-delete').addEventListener('click', (e) => {
-        e.stopPropagation();
-        newTask.style.opacity = '0';
-        setTimeout(() => newTask.remove(), 300);
-    });
-
-    container.appendChild(newTask);
-    input.value = '';
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#f8fafc' } }
+      },
+      scales: {
+        x: { ticks: { color: '#9db8ae' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#9db8ae' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
 }
