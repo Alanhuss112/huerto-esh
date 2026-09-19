@@ -4,103 +4,170 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Huerto Hidropónico ESH</title>
-    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Hoja de estilos -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <header class="header-institucional">
-        <h1>Propedéutico Ciencias Básicas e Ingeniería</h1>
-        <h2>Escuela Superior de Huejutla</h2>
-        <h3 class="subtitle-proyecto">Huerto Hidropónico</h3>
-        <div class="linea-decorativa"></div>
-    </header>
-
-    <nav class="navbar">
-        <button id="nav-control" class="nav-btn active" onclick="switchTab('control')">Panel de Control</button>
-        <button id="nav-stats" class="nav-btn" onclick="switchTab('stats')">Estadísticas</button>
-    </nav>
-
-    <div class="app-container">
-        
-        <section id="sec-control" class="app-section">
-            <h3 class="section-title">Monitoreo en Tiempo Real</h3>
-        
-            <div class="grid-monitoreo">
-                
-          
-                <div class="card-sensor card-ph-v5" id="card-ph">
-                    <span class="sensor-title">Potencial de Hidrógeno</span>
-                    <div class="sensor-value"><span id="ph">--</span></div>
-                    <span class="sensor-unit">Rango Óptimo: 5.5 - 6.8</span>
-                </div>
-                
-                <div class="card-sensor card-temp-v5" id="card-temp">
-                    <span class="sensor-title">Temperatura del Agua</span>
-                    <div class="sensor-value"><span id="temp">--</span> <span class="unit-text">°C</span></div>
-                    <span class="sensor-unit">Rango Óptimo: 18.0°C - 24.0°C</span>
-                </div>
-
-                <div class="card-sensor card-ec-v5" id="card-ec">
-                    <span class="sensor-title">Conductividad Eléctrica</span>
-                    <div class="sensor-value"><span id="ec">--</span> <span class="unit-text">mS/cm</span></div>
-                    <span class="sensor-unit">Rango Óptimo: 1.0 - 2.0</span>
-                </div>
-
+    <!-- OVERLAY DE LOGIN -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <i class="fa-solid fa-seedling"></i>
+            <h2>Acceso Huerto</h2>
+            <div class="input-wrapper">
+                <input type="text" id="username" placeholder="Usuario">
+                <i class="fa-solid fa-user"></i>
             </div>
-
-            <h3 class="section-title">Control de Potencia (Hardware 12V 10A)</h3>
-            
-            <div class="actuadores-unificados-v5">
-                
-                <div class="actuador-contenedor-v5">
-                    <h4>Bomba de Nutrientes</h4>
-                    <div class="slider-control">
-                        <input type="checkbox" id="toggle-bomba" class="slider-checkbox">
-                        <label for="toggle-bomba" class="slider-label"></label>
-                    </div>
-                    <p id="bomba-status-txt" class="status-hardware">Conectando con el huerto... ⏳</p>
-                </div>
-
-                <div class="actuador-contenedor-v5 panel-peltier-v5" id="panel-peltier">
-                    <h4>Climatización (Enfriamiento Peltier)</h4>
-                    <div class="peltier-display-v5">
-                        <span id="peltier-icono" class="icono-clima-v5">❄️</span>
-                
-                        <div class="slider-control slider-disabled-v5">
-                            <input type="checkbox" id="slider-peltier" class="slider-checkbox">
-                            <label class="slider-label"></label>
-                        </div>
-                    </div>
-                    <p id="peltier-status-txt" class="status-hardware">Controlado automáticamente por ESP32</p>
-                </div>
-
+            <div class="input-wrapper">
+                <input type="password" id="password" placeholder="Contraseña">
+                <i class="fa-solid fa-lock"></i>
             </div>
-        </section>
-
-        <section id="sec-stats" class="app-section hidden">
-            <h3 class="section-title">Historial y Tendencias</h3>
-            
-            <div class="grid-graficas">
-                <div class="chart-container">
-                    <h4>Evolución del pH</h4>
-                    <div class="canvas-wrapper"><canvas id="chart-ph-canvas"></canvas></div>
-                </div>
-                
-                <div class="chart-container">
-                    <h4>Temperatura del Agua (°C)</h4>
-                    <div class="canvas-wrapper"><canvas id="chart-temp-canvas"></canvas></div>
-                </div>
-                
-                <div class="chart-container">
-                    <h4>Conductividad Eléctrica (EC)</h4>
-                    <div class="canvas-wrapper"><canvas id="chart-ec-canvas"></canvas></div>
-                </div>
-            </div>
-        </section>
-
+            <button id="btn-login">Ingresar</button>
+            <div id="login-error">Usuario o contraseña incorrectos</div>
+        </div>
     </div>
 
+    <!-- DASHBOARD PRINCIPAL -->
+    <div id="dashboard">
+        <header>
+            <h1>PROPEDÉUTICO CIENCIAS BÁSICAS E INGENIERÍA</h1>
+            <h2>Escuela Superior de Huejutla</h2>
+            <h3>HUERTO HIDROPÓNICO</h3>
+        </header>
+
+        <!-- SECCIÓN 1: SENSORES -->
+        <div class="section-title"><i class="fa-solid fa-satellite-dish"></i> Monitoreo en Tiempo Real</div>
+        <div class="grid-4">
+            <div class="card">
+                <div class="sensor-header"><span>pH del Agua</span> <i class="fa-solid fa-flask text-neon-cyan"></i></div>
+                <div class="sensor-value" style="color: var(--neon-cyan);"><span id="val-ph">--</span> <small>pH</small></div>
+                <div class="progress-bg"><div id="bar-ph" class="progress-fill" style="width: 0%; background: var(--neon-cyan);"></div></div>
+                <div class="sensor-header" style="margin: 5px 0 0 0; font-size: 0.75em;">Óptimo: 5.5 - 6.5</div>
+            </div>
+            <div class="card">
+                <div class="sensor-header"><span>Conductividad (CE)</span> <i class="fa-solid fa-bolt text-neon-green"></i></div>
+                <div class="sensor-value" style="color: var(--neon-green);"><span id="val-ce">--</span> <small>mS/cm</small></div>
+                <div class="progress-bg"><div id="bar-ce" class="progress-fill" style="width: 0%; background: var(--neon-green);"></div></div>
+                <div class="sensor-header" style="margin: 5px 0 0 0; font-size: 0.75em;">Óptimo: 2.0 - 2.5</div>
+            </div>
+            <div class="card">
+                <div class="sensor-header"><span>Temperatura</span> <i class="fa-solid fa-temperature-half text-neon-purple"></i></div>
+                <div class="sensor-value" style="color: var(--neon-purple);"><span id="val-temp">--</span> <small>°C</small></div>
+                <div class="progress-bg"><div id="bar-temp" class="progress-fill" style="width: 0%; background: var(--neon-purple);"></div></div>
+                <div class="sensor-header" style="margin: 5px 0 0 0; font-size: 0.75em;">Óptimo: 18°C - 27°C</div>
+            </div>
+            <div class="card">
+                <div class="sensor-header"><span>Humedad Relativa</span> <i class="fa-solid fa-droplet text-neon-cyan"></i></div>
+                <div class="sensor-value" style="color: #fff;"><span id="val-hum">--</span> <small>%</small></div>
+                <div class="progress-bg"><div id="bar-hum" class="progress-fill" style="width: 0%; background: #fff;"></div></div>
+                <div class="sensor-header" style="margin: 5px 0 0 0; font-size: 0.75em;">Ambiente</div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: GRÁFICAS Y HARDWARE -->
+        <div class="grid-2">
+            <div class="card">
+                <div class="chart-header">
+                    <div class="section-title" style="margin: 0;"><i class="fa-solid fa-chart-line"></i> Historial de Variables</div>
+                    <select id="chartSelector" class="chart-select">
+                        <option value="ph">Potencial de Hidrógeno (pH)</option>
+                        <option value="temperatura">Temperatura (°C)</option>
+                        <option value="ec">Conductividad Eléctrica (CE)</option>
+                    </select>
+                </div>
+                <div style="height: 250px; position: relative;">
+                    <canvas id="sensorChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title" style="margin: 0 0 20px 0;"><i class="fa-solid fa-microchip"></i> Control de Potencia (ESP32)</div>
+                <div class="hardware-list">
+                    <div class="hardware-item">
+                        <div class="hardware-info">
+                            <strong><i class="fa-solid fa-faucet-drip" style="color: var(--neon-cyan)"></i> Bomba Principal</strong>
+                            <span>Sistema NFT / Riego continuo</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="sw-bomba1"><span class="slider cyan"></span>
+                        </label>
+                    </div>
+                    <div class="hardware-item">
+                        <div class="hardware-info">
+                            <strong><i class="fa-solid fa-shower" style="color: var(--neon-green)"></i> Bomba Secundaria</strong>
+                            <span>Oxigenación y respaldo</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="sw-bomba2"><span class="slider green"></span>
+                        </label>
+                    </div>
+                    <div class="hardware-item">
+                        <div class="hardware-info">
+                            <strong><i class="fa-solid fa-snowflake" style="color: var(--neon-purple)"></i> Placa Peltier (TEC1)</strong>
+                            <span>Climatización de tanque térmico</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="sw-peltier"><span class="slider purple"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: TRACKER Y CHECKLIST -->
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-title" style="margin: 0 0 15px 0;"><i class="fa-solid fa-leaf"></i> Tracker de Cultivo</div>
+                <p style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 20px;">Ciclo automático: 15 días Agua Pura + 15 días Solución Nutritiva.</p>
+                
+                <div class="input-group">
+                    <input type="text" id="tracker-input" placeholder="Ej: Lote Lechugas A1...">
+                    <button class="btn-add" id="btn-add-tracker"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div id="tracker-container">
+                    <div class="tracker-item">
+                        <div class="tracker-top">
+                            <span class="tracker-title">Germinado de Prueba</span>
+                            <span class="tracker-days">Día 8 / 30</span>
+                        </div>
+                        <div class="tracker-visual-bar">
+                            <div class="fase-agua">Fase 1: Agua</div>
+                            <div class="fase-nutri">Fase 2: Solución 50%</div>
+                            <div class="tracker-cursor" style="left: 26.6%;"></div>
+                        </div>
+                        <div class="tracker-dates">
+                            <span>Inicio: Hoy</span>
+                            <span>Cambio: +15d</span>
+                            <span>Cosecha: +30d</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title" style="margin: 0 0 15px 0;"><i class="fa-solid fa-list-check"></i> Checklist Operativo</div>
+                <p style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 20px;">Gestión de tareas de mantenimiento del huerto.</p>
+
+                <div class="input-group">
+                    <input type="text" id="task-input" placeholder="Ej: Calibrar sonda de CE...">
+                    <button class="btn-add" id="btn-add-task"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div class="task-list" id="task-container">
+                    <div class="task-item">
+                        <div class="task-checkbox"><i class="fa-solid fa-check"></i></div>
+                        <span class="task-text">Revisar nivel del tanque principal</span>
+                        <button class="task-delete"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script principal de lógica y Firebase -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
