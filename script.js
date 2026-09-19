@@ -1,13 +1,20 @@
 let sensorChart;
 
 const historyData = {
-  temperatura: [21.5, 22.0, 23.8, 25.4, 26.0, 24.8, 22.5],
   ph: [6.1, 6.2, 6.4, 6.5, 6.3, 6.2, 6.2],
-  ec: [2.0, 2.1, 2.3, 2.5, 2.4, 2.2, 2.2],
-  humedad: [72, 70, 68, 65, 66, 67, 68]
+  temperatura: [21.5, 22.0, 23.8, 25.4, 26.0, 24.8, 22.5],
+  ec: [1.6, 1.7, 1.8, 1.9, 1.8, 1.8, 1.8],
+  humedad: [72, 70, 68, 65, 66, 67, 67]
 };
 
 const labelsHora = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', 'Ahora'];
+
+const configMap = {
+  ph: { label: 'Potencial de Hidrógeno (pH)', name: 'pH', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
+  temperatura: { label: 'Temperatura (°C)', name: 'Temperatura', color: '#ff5d67', bg: 'rgba(255, 93, 103, 0.15)' },
+  ec: { label: 'Conductividad (mS/cm)', name: 'Conductividad Eléctrica', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.15)' },
+  humedad: { label: 'Humedad (%)', name: 'Humedad Relativa', color: '#35e58a', bg: 'rgba(53, 229, 138, 0.15)' }
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   iniciarReloj();
@@ -74,21 +81,22 @@ function iniciarReloj() {
 
 function inicializarGrafica() {
   const ctx = document.getElementById('sensorChart').getContext('2d');
+  const initialMetric = configMap.ph;
   
   sensorChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labelsHora,
       datasets: [{
-        label: 'Temperatura (°C)',
-        data: historyData.temperatura,
-        borderColor: '#35e58a',
-        backgroundColor: 'rgba(53, 229, 138, 0.1)',
+        label: initialMetric.label,
+        data: historyData.ph,
+        borderColor: initialMetric.color,
+        backgroundColor: initialMetric.bg,
         borderWidth: 3,
         tension: 0.35,
         fill: true,
         pointBackgroundColor: '#ffffff',
-        pointBorderColor: '#35e58a',
+        pointBorderColor: initialMetric.color,
         pointRadius: 4,
         pointHoverRadius: 6
       }]
@@ -107,19 +115,13 @@ function inicializarGrafica() {
 }
 
 function cambiarMetricaGrafica() {
-  const metric = document.getElementById('chartSelect').value;
-  const configMap = {
-    temperatura: { label: 'Temperatura (°C)', name: 'Temperatura', color: '#35e58a', bg: 'rgba(53, 229, 138, 0.12)' },
-    ph: { label: 'pH del Agua', name: 'pH', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.12)' },
-    ec: { label: 'Conductividad (mS/cm)', name: 'Conductividad Eléctrica', color: '#ffd166', bg: 'rgba(255, 209, 98, 0.12)' },
-    humedad: { label: 'Humedad (%)', name: 'Humedad Relativa', color: '#35e58a', bg: 'rgba(53, 229, 138, 0.12)' }
-  };
+  const metricKey = document.getElementById('chartSelect').value;
+  const current = configMap[metricKey] || configMap.ph;
 
-  const current = configMap[metric];
   document.getElementById('selectedMetricName').innerText = current.name;
 
   sensorChart.data.datasets[0].label = current.label;
-  sensorChart.data.datasets[0].data = historyData[metric];
+  sensorChart.data.datasets[0].data = historyData[metricKey];
   sensorChart.data.datasets[0].borderColor = current.color;
   sensorChart.data.datasets[0].backgroundColor = current.bg;
   sensorChart.data.datasets[0].pointBorderColor = current.color;
@@ -127,11 +129,7 @@ function cambiarMetricaGrafica() {
 }
 
 function toggleActuador(actuador, estado) {
-  if (actuador === 'bomba1') {
-    const statusBox = document.getElementById('statusBomba1');
-    statusBox.classList.toggle('on', estado);
-    statusBox.innerHTML = `<span class="status-dot"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
-  } else if (actuador === 'bomba_muestreo') {
+  if (actuador === 'bomba_muestreo') {
     const statusBox = document.getElementById('statusBomba2');
     statusBox.classList.toggle('on', estado);
     statusBox.innerHTML = `<span class="status-dot"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
@@ -153,7 +151,6 @@ function addTracker(title = "", initialDay = null, startDateStr = "") {
   let startDate = startDateStr ? new Date(startDateStr) : (dateInput.value ? new Date(dateInput.value) : new Date());
   let startDay = initialDay !== null ? parseInt(initialDay) : (parseInt(dayInput.value) || 1);
 
-  // Calcular días desde fecha de inicio
   const hoy = new Date();
   const diffTime = Math.max(0, hoy - startDate);
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
