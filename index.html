@@ -51,8 +51,7 @@
       <div class="header-branding">
         <h1>PROPEDÉUTICO CIENCIAS BÁSICAS E INGENIERÍA</h1>
         <h2>Escuela Superior de Huejutla</h2>
-        <h3><i class="fa-solid fa-seedling brand-icon"></i> HUERTO HIDROPÓNICO AUTOMATIZADO</h3>
-        <p class="sub-brand">Desarrollado por la Cuadrilla de Programación</p>
+        <h3>HUERTO HIDROPÓNICO AUTOMATIZADO</h3>
       </div>
 
       <div class="system-status-bar">
@@ -72,7 +71,7 @@
 
     <main class="dashboard-grid">
       <div class="section-heading">
-        <h2><i class="fa-solid fa-temperature-three-quarters"></i> Variables Ambientales</h2>
+        <h2><i class="fa-solid fa-satellite-dish"></i> Monitoreo en Tiempo Real</h2>
       </div>
 
       <div class="sensors-grid">
@@ -83,7 +82,7 @@
           </div>
           <div class="metric-value"><span id="phValue">6.2</span> <small>pH</small></div>
           <div class="progress-bar"><div class="progress-fill fill-ph" style="width: 70%;"></div></div>
-          <div class="metric-footer"><span>4</span><strong>Ideal: 5.5 - 6.5</strong><span>9</span></div>
+          <div class="metric-footer"><span>Óptimo: 5.5 - 6.5</span></div>
         </div>
 
         <div class="card metric-card">
@@ -91,9 +90,9 @@
             <span>Conductividad (CE)</span>
             <i class="fa-solid fa-bolt icon-ce"></i>
           </div>
-          <div class="metric-value"><span id="ecValue">2.2</span> <small>mS/cm</small></div>
+          <div class="metric-value"><span id="ecValue">1.8</span> <small>mS/cm</small></div>
           <div class="progress-bar"><div class="progress-fill fill-ce" style="width: 80%;"></div></div>
-          <div class="metric-footer"><span>0</span><strong>Ideal: 2.0 - 2.5</strong><span>4</span></div>
+          <div class="metric-footer"><span>Óptimo: 2.0 - 2.5</span></div>
         </div>
 
         <div class="card metric-card">
@@ -101,9 +100,9 @@
             <span>Temperatura</span>
             <i class="fa-solid fa-temperature-half icon-temp"></i>
           </div>
-          <div class="metric-value"><span id="tempValue">22.5</span> <small>°C</small></div>
+          <div class="metric-value"><span id="tempValue">26.4</span> <small>°C</small></div>
           <div class="progress-bar"><div class="progress-fill fill-temp" style="width: 45%;"></div></div>
-          <div class="metric-footer"><span>0°</span><strong>Ideal: 18°C - 27°C</strong><span>50°</span></div>
+          <div class="metric-footer"><span>Óptimo: 18°C - 27°C</span></div>
         </div>
 
         <div class="card metric-card">
@@ -111,24 +110,24 @@
             <span>Humedad Relativa</span>
             <i class="fa-solid fa-droplet icon-hum"></i>
           </div>
-          <div class="metric-value"><span id="humValue">68</span> <small>%</small></div>
-          <div class="progress-bar"><div class="progress-fill fill-hum" style="width: 68%;"></div></div>
-          <div class="metric-footer"><span>0%</span><strong>Ideal: 60% - 80%</strong><span>100%</span></div>
+          <div class="metric-value"><span id="humValue">67</span> <small>%</small></div>
+          <div class="progress-bar"><div class="progress-fill fill-hum" style="width: 67%;"></div></div>
+          <div class="metric-footer"><span>Ambiente</span></div>
         </div>
       </div>
 
       <div class="status-banner">
         <i class="fa-solid fa-circle-check"></i>
-        <span>Todos los parámetros se encuentran dentro del rango configurado.</span>
+        <span>Sistema funcionando correctamente</span>
       </div>
 
       <div class="card chart-card">
         <div class="chart-header">
-          <h3 id="chartTitle"><i class="fa-solid fa-chart-line"></i> Historial de Sensores: <span id="selectedMetricName">Temperatura</span></h3>
+          <h3 id="chartTitle"><i class="fa-solid fa-chart-line"></i> Historial de Variables</h3>
           <select id="chartSelect" class="select-metric" onchange="cambiarMetricaGrafica()">
+            <option value="ph">Potencial de Hidrógeno (pH)</option>
             <option value="temperatura">Temperatura (°C)</option>
-            <option value="ph">pH del Agua</option>
-            <option value="ec">Conductividad Eléctrica (mS/cm)</option>
+            <option value="ec">Conductividad Eléctrica (CE)</option>
             <option value="humedad">Humedad (%)</option>
           </select>
         </div>
@@ -138,14 +137,29 @@
       </div>
 
       <div class="card control-card">
-        <h3><i class="fa-solid fa-sliders"></i> Control de Potencia (ESP32)</h3>
+        <h3><i class="fa-solid fa-microchip"></i> Control de Dispositivos (ESP32)</h3>
         <div class="control-grid">
+          <div class="control-item">
+            <div class="actuator-info">
+              <i class="fa-solid fa-faucet-drip actuator-icon"></i>
+              <div>
+                <strong>Bomba 1 — Principal</strong>
+                <span>Sistema NFT / Riego continuo</span>
+                <div class="actuator-status" id="statusBomba1"><span class="status-dot"></span> APAGADA</div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="btnBomba1" onchange="toggleActuador('bomba1', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
           <div class="control-item">
             <div class="actuator-info">
               <i class="fa-solid fa-shower actuator-icon"></i>
               <div>
                 <strong>Bomba 2 — Secundaria</strong>
-                <span>Muestreo / Apoyo para sistema hidráulico</span>
+                <span>Apoyo para sistema hidráulico</span>
                 <div class="actuator-status" id="statusBomba2"><span class="status-dot"></span> APAGADA</div>
               </div>
             </div>
@@ -159,8 +173,8 @@
             <div class="actuator-info">
               <i class="fa-solid fa-snowflake actuator-icon icon-peltier"></i>
               <div>
-                <strong>Placa Peltier (TEC1)</strong>
-                <span>Climatización de tanque térmico</span>
+                <strong>Placa Peltier</strong>
+                <span>Control manual de temperatura</span>
                 <div class="actuator-status" id="statusPeltier"><span class="status-dot"></span> APAGADA</div>
               </div>
             </div>
@@ -200,7 +214,7 @@
     </main>
 
     <footer>
-      Huerto Inteligente · ESP32 · Escuela Superior de Huejutla
+      Huerto Inteligente · ESP32 · Sistema de monitoreo agrícola
     </footer>
   </div>
 

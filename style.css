@@ -131,7 +131,7 @@ html, body {
 .main-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 25px;
   padding: 25px;
   background: var(--card-bg);
@@ -153,10 +153,9 @@ html, body {
   background: linear-gradient(90deg, var(--cyan-neon), var(--green-bright), var(--purple-neon));
 }
 
-.header-branding h1 { font-size: 1.2rem; letter-spacing: 1.5px; color: #ffffff; text-transform: uppercase; font-weight: 700; }
-.header-branding h2 { font-size: 0.9rem; color: var(--text-muted); margin-top: 3px; font-weight: 400; }
-.header-branding h3 { font-size: 1rem; color: var(--green-bright); letter-spacing: 2px; margin-top: 8px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.sub-brand { color: var(--cyan-neon); font-size: 0.8rem; font-weight: 600; margin-top: 4px; }
+.header-branding h1 { font-size: 1.1rem; letter-spacing: 1px; color: #ffffff; text-transform: uppercase; font-weight: 700; }
+.header-branding h2 { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; font-weight: 400; }
+.header-branding h3 { font-size: 0.95rem; color: var(--green-bright); letter-spacing: 1.5px; margin-top: 6px; font-weight: 700; }
 
 .system-status-bar { display: flex; align-items: center; gap: 12px; }
 
@@ -323,6 +322,7 @@ input:checked + .slider:before { transform: translateX(24px); }
 .tracker-item {
   background: rgba(0,0,0,0.25); padding: 15px; border-radius: 12px;
   border: 1px solid var(--card-border); border-left: 4px solid var(--cyan-neon);
+  margin-bottom: 12px;
 }
 
 .tracker-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -357,6 +357,7 @@ input:checked + .slider:before { transform: translateX(24px); }
   display: flex; align-items: center; gap: 12px;
   background: rgba(0,0,0,0.25); padding: 12px 15px; border-radius: 10px;
   border: 1px solid var(--card-border); transition: 0.3s; cursor: pointer;
+  margin-bottom: 8px;
 }
 
 .task-checkbox {

@@ -127,7 +127,11 @@ function cambiarMetricaGrafica() {
 }
 
 function toggleActuador(actuador, estado) {
-  if (actuador === 'bomba_muestreo') {
+  if (actuador === 'bomba1') {
+    const statusBox = document.getElementById('statusBomba1');
+    statusBox.classList.toggle('on', estado);
+    statusBox.innerHTML = `<span class="status-dot"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
+  } else if (actuador === 'bomba_muestreo') {
     const statusBox = document.getElementById('statusBomba2');
     statusBox.classList.toggle('on', estado);
     statusBox.innerHTML = `<span class="status-dot"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
@@ -138,7 +142,7 @@ function toggleActuador(actuador, estado) {
   }
 }
 
-function addTracker(title = "", day = 1) {
+function addTracker(title = "", day = 8) {
   const input = document.getElementById('tracker-input');
   const name = title || input.value.trim();
   if (!name) return;
@@ -176,7 +180,7 @@ function guardarTrackers() {
   document.querySelectorAll('.tracker-item').forEach(el => {
     const title = el.querySelector('.tracker-title').innerText;
     const daysText = el.querySelector('.tracker-days').innerText;
-    const day = parseInt(daysText.match(/\d+/)[0]) || 1;
+    const day = parseInt(daysText.match(/\d+/)[0]) || 8;
     items.push({ title, day });
   });
   localStorage.setItem('hidro_trackers_list', JSON.stringify(items));
