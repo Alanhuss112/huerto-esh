@@ -126,6 +126,22 @@ function mostrarInterfaz() {
   document.getElementById("loginOverlay").classList.add("hidden");
   document.getElementById("appContainer").classList.remove("hidden");
   
+  // Establecer estado inicial de "Conectando..." al abrir la interfaz
+  const badge = document.getElementById('statusBadge');
+  const text = document.getElementById('statusText');
+  const banner = document.getElementById('systemBanner');
+  
+  if (badge) badge.className = "status-indicator";
+  if (text) text.innerText = "Conectando...";
+  if (banner) {
+    banner.style.borderColor = "#ffd166";
+    banner.style.background = "rgba(255, 209, 102, 0.08)";
+    banner.innerHTML = `
+      <i class="fa-solid fa-spinner fa-spin" style="color: #ffd166;"></i>
+      <span style="color: #ffd166;">Estableciendo conexión con el sistema...</span>
+    `;
+  }
+
   if (userRole === 'viewer') {
     aplicarModoObservador();
   } else {
