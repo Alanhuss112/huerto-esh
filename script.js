@@ -18,7 +18,7 @@ let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
 const labelsHora = [];
 let userRole = null;
-let ultimaVezDatos = 0;
+let ultimaVezDatos = Date.now();
 let intervaloVerificacion = null;
 
 const configMap = {
@@ -31,12 +31,14 @@ const configMap = {
 document.addEventListener("DOMContentLoaded", () => {
   iniciarReloj();
   inicializarGrafica();
-  escucharFirebase();
   
+  // Revisión previa de sesión guardada
   if (localStorage.getItem("hidro_logged_in") === "true") {
     userRole = localStorage.getItem("hidro_role") || "admin";
     mostrarInterfaz();
   }
+
+  escucharFirebase();
 
   const btnTracker = document.getElementById('btn-add-tracker');
   if (btnTracker) {
@@ -100,7 +102,7 @@ function autenticar() {
   const errorMsg = document.getElementById("loginErrorMsg");
 
   if (user === "H.G.D.A." && pass === "Hidroponico26") {
-    userRole = "admin";
+    userRole = "admin"; 
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
       localStorage.setItem("hidro_role", "admin");
@@ -108,7 +110,7 @@ function autenticar() {
     errorMsg.classList.add("hidden");
     mostrarInterfaz();
   } else if (user === "Hidrop26" && pass === "2627") {
-    userRole = "viewer";
+    userRole = "viewer"; 
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
       localStorage.setItem("hidro_role", "viewer");
@@ -126,7 +128,6 @@ function autenticar() {
 function mostrarInterfaz() {
   document.getElementById("loginOverlay").classList.add("hidden");
   document.getElementById("appContainer").classList.remove("hidden");
-  
   
   ultimaVezDatos = Date.now();
   const badge = document.getElementById('statusBadge');
@@ -343,15 +344,15 @@ function escucharFirebase() {
   });
 
   if (intervaloVerificacion) clearInterval(intervaloVerificacion);
+  
   intervaloVerificacion = setInterval(() => {
-    
     const appContainer = document.getElementById('appContainer');
     if (appContainer && !appContainer.classList.contains('hidden')) {
-      if (ultimaVezDatos > 0 && (Date.now() - ultimaVezDatos > 10000)) {
+      if (ultimaVezDatos > 0 && (Date.now() - ultimaVezDatos > 15000)) {
         marcarEsp32Desconectado();
       }
     }
-  }, 2000);
+  }, 3000);
 
   database.ref('actuadores').on('value', (snapshot) => {
     const act = snapshot.val();
@@ -475,7 +476,8 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
   newTracker.className = 'tracker-item';
 
   
-  let deleteButtonHTML = userRole === 'admin' ? `<button class="tracker-delete" title="Eliminar tracker"><i class="fa-solid fa-xmark"></i></button>` : '';
+  const isAdmin = (userRole === 'admin');
+  let deleteButtonHTML = isAdmin ? `<button class="tracker-delete" title="Eliminar tracker"><i class="fa-solid fa-xmark"></i></button>` : '';
 
   newTracker.innerHTML = `
     <div class="tracker-header">
@@ -497,7 +499,7 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
     </div>
   `;
 
-  if (userRole === 'admin') {
+  if (isAdmin) {
     const deleteBtn = newTracker.querySelector('.tracker-delete');
     if (deleteBtn) {
       deleteBtn.addEventListener('click', () => {
@@ -531,7 +533,8 @@ function renderTaskItem(key, text, completed) {
   const newTask = document.createElement('div');
   newTask.className = `task-item ${completed ? 'completed' : ''}`;
   
-  let deleteButtonHTML = userRole === 'admin' ? `<button class="task-delete" title="Eliminar tarea"><i class="fa-solid fa-xmark"></i></button>` : '';
+  const isAdmin = (userRole === 'admin');
+  let deleteButtonHTML = isAdmin ? `<button class="task-delete" title="Eliminar tarea"><i class="fa-solid fa-xmark"></i></button>` : '';
 
   newTask.innerHTML = `
       <div class="task-checkbox"><i class="fa-solid fa-check"></i></div>
@@ -546,7 +549,7 @@ function renderTaskItem(key, text, completed) {
       }
   });
 
-  if (userRole === 'admin') {
+  if (isAdmin) {
     const deleteBtn = newTask.querySelector('.task-delete');
     if (deleteBtn) {
       deleteBtn.addEventListener('click', (e) => {
