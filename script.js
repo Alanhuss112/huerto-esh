@@ -127,7 +127,8 @@ function mostrarInterfaz() {
   document.getElementById("loginOverlay").classList.add("hidden");
   document.getElementById("appContainer").classList.remove("hidden");
   
-  // Estado inicial de carga
+  
+  ultimaVezDatos = Date.now();
   const badge = document.getElementById('statusBadge');
   const text = document.getElementById('statusText');
   const banner = document.getElementById('systemBanner');
@@ -186,6 +187,12 @@ function cerrarSesion() {
   localStorage.removeItem("hidro_logged_in");
   localStorage.removeItem("hidro_role");
   userRole = null;
+  
+  if (intervaloVerificacion) {
+    clearInterval(intervaloVerificacion);
+    intervaloVerificacion = null;
+  }
+  
   document.getElementById("appContainer").classList.add("hidden");
   document.getElementById("loginOverlay").classList.remove("hidden");
 }
@@ -337,8 +344,12 @@ function escucharFirebase() {
 
   if (intervaloVerificacion) clearInterval(intervaloVerificacion);
   intervaloVerificacion = setInterval(() => {
-    if (ultimaVezDatos > 0 && (Date.now() - ultimaVezDatos > 10000)) {
-      marcarEsp32Desconectado();
+    
+    const appContainer = document.getElementById('appContainer');
+    if (appContainer && !appContainer.classList.contains('hidden')) {
+      if (ultimaVezDatos > 0 && (Date.now() - ultimaVezDatos > 10000)) {
+        marcarEsp32Desconectado();
+      }
     }
   }, 2000);
 
@@ -463,6 +474,7 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
   const newTracker = document.createElement('div');
   newTracker.className = 'tracker-item';
 
+  
   let deleteButtonHTML = userRole === 'admin' ? `<button class="tracker-delete" title="Eliminar tracker"><i class="fa-solid fa-xmark"></i></button>` : '';
 
   newTracker.innerHTML = `
@@ -486,9 +498,12 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
   `;
 
   if (userRole === 'admin') {
-    newTracker.querySelector('.tracker-delete').addEventListener('click', () => {
-      database.ref('trackers/' + key).remove();
-    });
+    const deleteBtn = newTracker.querySelector('.tracker-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        database.ref('trackers/' + key).remove();
+      });
+    }
   }
 
   container.appendChild(newTracker);
@@ -525,17 +540,20 @@ function renderTaskItem(key, text, completed) {
   `;
   
   newTask.addEventListener('click', function(e) {
-      if (userRole === 'viewer') return;
+      if (userRole === 'viewer') return; 
       if (!e.target.closest('.task-delete')) {
           database.ref('tasks/' + key + '/completed').set(!completed);
       }
   });
 
   if (userRole === 'admin') {
-    newTask.querySelector('.task-delete').addEventListener('click', (e) => {
-        e.stopPropagation();
-        database.ref('tasks/' + key).remove();
-    });
+    const deleteBtn = newTask.querySelector('.task-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          database.ref('tasks/' + key).remove();
+      });
+    }
   }
 
   container.appendChild(newTask);
