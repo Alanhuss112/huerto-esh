@@ -17,8 +17,9 @@ const database = firebase.database();
 let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
 const labelsHora = [];
-let esp32Timeout = null;
 let userRole = null;
+let ultimaVezDatos = 0;
+let intervaloVerificacion = null;
 
 const configMap = {
   ph: { label: 'Potencial de Hidrógeno (pH)', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
@@ -126,7 +127,7 @@ function mostrarInterfaz() {
   document.getElementById("loginOverlay").classList.add("hidden");
   document.getElementById("appContainer").classList.remove("hidden");
   
-  // Establecer estado inicial de "Conectando..." al abrir la interfaz
+  // Estado inicial de carga
   const badge = document.getElementById('statusBadge');
   const text = document.getElementById('statusText');
   const banner = document.getElementById('systemBanner');
@@ -287,6 +288,8 @@ function escucharFirebase() {
   database.ref('sensores').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
+      ultimaVezDatos = Date.now();
+      
       document.getElementById('statusBadge').className = "status-indicator online";
       document.getElementById('statusText').innerText = "ESP32 Conectado";
       
@@ -329,13 +332,15 @@ function escucharFirebase() {
         }
         cambiarMetricaGrafica();
       }
-
-      if (esp32Timeout) clearTimeout(esp32Timeout);
-      esp32Timeout = setTimeout(() => {
-        marcarEsp32Desconectado();
-      }, 10000);
     }
   });
+
+  if (intervaloVerificacion) clearInterval(intervaloVerificacion);
+  intervaloVerificacion = setInterval(() => {
+    if (ultimaVezDatos > 0 && (Date.now() - ultimaVezDatos > 10000)) {
+      marcarEsp32Desconectado();
+    }
+  }, 2000);
 
   database.ref('actuadores').on('value', (snapshot) => {
     const act = snapshot.val();
