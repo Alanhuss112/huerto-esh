@@ -18,6 +18,7 @@ let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
 const labelsHora = [];
 let esp32Timeout = null;
+let userRole = null;
 
 const configMap = {
   ph: { label: 'Potencial de Hidrógeno (pH)', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
@@ -32,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
   escucharFirebase();
   
   if (localStorage.getItem("hidro_logged_in") === "true") {
+    userRole = localStorage.getItem("hidro_role") || "admin";
     mostrarInterfaz();
   }
 
@@ -39,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnTracker) {
     btnTracker.addEventListener('click', (e) => {
       e.preventDefault();
+      if (userRole === 'viewer') return;
       addTracker();
     });
   }
@@ -48,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     trackerInput.addEventListener('keypress', (e) => { 
       if (e.key === 'Enter') {
         e.preventDefault();
+        if (userRole === 'viewer') return;
         addTracker();
       }
     });
@@ -57,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnTask) {
     btnTask.addEventListener('click', (e) => {
       e.preventDefault();
+      if (userRole === 'viewer') return;
       addTask();
     });
   }
@@ -66,6 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     taskInput.addEventListener('keypress', (e) => { 
       if (e.key === 'Enter') {
         e.preventDefault();
+        if (userRole === 'viewer') return;
         addTask();
       }
     });
@@ -93,8 +99,18 @@ function autenticar() {
   const errorMsg = document.getElementById("loginErrorMsg");
 
   if (user === "H.G.D.A." && pass === "Hidroponico26") {
+    userRole = "admin";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
+      localStorage.setItem("hidro_role", "admin");
+    }
+    errorMsg.classList.add("hidden");
+    mostrarInterfaz();
+  } else if (user === "Hidrop26" && pass === "2627") {
+    userRole = "viewer";
+    if (remember) {
+      localStorage.setItem("hidro_logged_in", "true");
+      localStorage.setItem("hidro_role", "viewer");
     }
     errorMsg.classList.add("hidden");
     mostrarInterfaz();
@@ -109,11 +125,50 @@ function autenticar() {
 function mostrarInterfaz() {
   document.getElementById("loginOverlay").classList.add("hidden");
   document.getElementById("appContainer").classList.remove("hidden");
+  
+  if (userRole === 'viewer') {
+    aplicarModoObservador();
+  } else {
+    removerModoObservador();
+  }
+
   setTimeout(cambiarMetricaGrafica, 50);
+}
+
+function aplicarModoObservador() {
+  const inputsSwitch = document.querySelectorAll('.control-item input[type="checkbox"]');
+  inputsSwitch.forEach(input => {
+    input.disabled = true;
+    input.parentElement.style.opacity = "0.6";
+    input.parentElement.style.cursor = "not-allowed";
+  });
+
+  const trackersForm = document.querySelector('.tracker-inputs-form');
+  if (trackersForm) trackersForm.style.display = "none";
+
+  const taskForm = document.querySelector('.checklist-card .input-group-add');
+  if (taskForm) taskForm.style.display = "none";
+}
+
+function removerModoObservador() {
+  const inputsSwitch = document.querySelectorAll('.control-item input[type="checkbox"]');
+  inputsSwitch.forEach(input => {
+    input.disabled = false;
+    input.parentElement.style.opacity = "1";
+    input.parentElement.style.cursor = "pointer";
+  });
+
+  const trackersForm = document.querySelector('.tracker-inputs-form');
+  if (trackersForm) trackersForm.style.display = "flex";
+
+  const taskForm = document.querySelector('.checklist-card .input-group-add');
+  if (taskForm) taskForm.style.display = "flex";
 }
 
 function cerrarSesion() {
   localStorage.removeItem("hidro_logged_in");
+  localStorage.removeItem("hidro_role");
+  userRole = null;
   document.getElementById("appContainer").classList.add("hidden");
   document.getElementById("loginOverlay").classList.remove("hidden");
 }
@@ -208,6 +263,7 @@ function cambiarMetricaGrafica() {
 }
 
 function toggleActuador(actuador, estado) {
+  if (userRole === 'viewer') return;
   database.ref('actuadores/' + actuador).set(estado);
 }
 
@@ -343,6 +399,7 @@ function actualizarBotonUI(id, estado) {
 }
 
 function addTracker() {
+  if (userRole === 'viewer') return;
   const nameInput = document.getElementById('tracker-input');
   const dateInput = document.getElementById('tracker-date-input');
   const timeInput = document.getElementById('tracker-time-input');
@@ -385,12 +442,14 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
   const newTracker = document.createElement('div');
   newTracker.className = 'tracker-item';
 
+  let deleteButtonHTML = userRole === 'admin' ? `<button class="tracker-delete" title="Eliminar tracker"><i class="fa-solid fa-xmark"></i></button>` : '';
+
   newTracker.innerHTML = `
     <div class="tracker-header">
         <span class="tracker-title">${title}</span>
         <div class="tracker-actions">
             <span class="tracker-days">Día ${currentDay} / 30</span>
-            <button class="tracker-delete" title="Eliminar tracker"><i class="fa-solid fa-xmark"></i></button>
+            ${deleteButtonHTML}
         </div>
     </div>
     <div class="tracker-visual-bar">
@@ -405,14 +464,17 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
     </div>
   `;
 
-  newTracker.querySelector('.tracker-delete').addEventListener('click', () => {
-    database.ref('trackers/' + key).remove();
-  });
+  if (userRole === 'admin') {
+    newTracker.querySelector('.tracker-delete').addEventListener('click', () => {
+      database.ref('trackers/' + key).remove();
+    });
+  }
 
   container.appendChild(newTracker);
 }
 
 function addTask() {
+  if (userRole === 'viewer') return;
   const input = document.getElementById('task-input');
   if (!input) return;
   const text = input.value.trim();
@@ -432,22 +494,28 @@ function renderTaskItem(key, text, completed) {
   
   const newTask = document.createElement('div');
   newTask.className = `task-item ${completed ? 'completed' : ''}`;
+  
+  let deleteButtonHTML = userRole === 'admin' ? `<button class="task-delete" title="Eliminar tarea"><i class="fa-solid fa-xmark"></i></button>` : '';
+
   newTask.innerHTML = `
       <div class="task-checkbox"><i class="fa-solid fa-check"></i></div>
       <span class="task-text">${text}</span>
-      <button class="task-delete" title="Eliminar tarea"><i class="fa-solid fa-xmark"></i></button>
+      ${deleteButtonHTML}
   `;
   
   newTask.addEventListener('click', function(e) {
+      if (userRole === 'viewer') return;
       if (!e.target.closest('.task-delete')) {
           database.ref('tasks/' + key + '/completed').set(!completed);
       }
   });
 
-  newTask.querySelector('.task-delete').addEventListener('click', (e) => {
-      e.stopPropagation();
-      database.ref('tasks/' + key).remove();
-  });
+  if (userRole === 'admin') {
+    newTask.querySelector('.task-delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        database.ref('tasks/' + key).remove();
+    });
+  }
 
   container.appendChild(newTask);
 }
