@@ -32,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
   iniciarReloj();
   inicializarGrafica();
   
-  // Revisión previa de sesión guardada
   if (localStorage.getItem("hidro_logged_in") === "true") {
     userRole = localStorage.getItem("hidro_role") || "admin";
     mostrarInterfaz();
@@ -102,7 +101,7 @@ function autenticar() {
   const errorMsg = document.getElementById("loginErrorMsg");
 
   if (user === "H.G.D.A." && pass === "Hidroponico26") {
-    userRole = "admin"; 
+    userRole = "admin";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
       localStorage.setItem("hidro_role", "admin");
@@ -110,7 +109,7 @@ function autenticar() {
     errorMsg.classList.add("hidden");
     mostrarInterfaz();
   } else if (user === "Hidrop26" && pass === "2627") {
-    userRole = "viewer"; 
+    userRole = "viewer";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
       localStorage.setItem("hidro_role", "viewer");
@@ -344,7 +343,6 @@ function escucharFirebase() {
   });
 
   if (intervaloVerificacion) clearInterval(intervaloVerificacion);
-  
   intervaloVerificacion = setInterval(() => {
     const appContainer = document.getElementById('appContainer');
     if (appContainer && !appContainer.classList.contains('hidden')) {
@@ -475,14 +473,13 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
   const newTracker = document.createElement('div');
   newTracker.className = 'tracker-item';
 
-  
   const isAdmin = (userRole === 'admin');
-  let deleteButtonHTML = isAdmin ? `<button class="tracker-delete" title="Eliminar tracker"><i class="fa-solid fa-xmark"></i></button>` : '';
+  let deleteButtonHTML = isAdmin ? `<button class="tracker-delete" title="Eliminar tracker" style="background:none; border:none; color:#ff5d67; cursor:pointer; margin-left:8px; font-size:14px;"><i class="fa-solid fa-xmark"></i></button>` : '';
 
   newTracker.innerHTML = `
-    <div class="tracker-header">
+    <div class="tracker-header" style="display: flex; justify-content: space-between; align-items: center;">
         <span class="tracker-title">${title}</span>
-        <div class="tracker-actions">
+        <div class="tracker-actions" style="display: flex; align-items: center;">
             <span class="tracker-days">Día ${currentDay} / 30</span>
             ${deleteButtonHTML}
         </div>
