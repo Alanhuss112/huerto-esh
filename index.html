@@ -151,12 +151,13 @@
               <div>
                 <strong>Bomba 1 — Principal</strong>
                 <span>Sistema NFT / Riego continuo</span>
-                <div class="actuator-status on"><span class="status-dot"></span> SIEMPRE ACTIVA (24/7)</div>
+                <div class="actuator-status" id="statusBombaPrincipal"><span class="status-dot"></span> ESTADO</div>
               </div>
             </div>
-            <div class="plug-indicator" title="Conectada directo a toma de corriente AC">
-              <i class="fa-solid fa-plug" style="color: var(--green-bright); font-size: 1.2rem;"></i>
-            </div>
+            <label class="switch">
+              <input type="checkbox" id="btn-bomba_principal" onchange="toggleActuador('bomba_principal', this.checked)">
+              <span class="slider"></span>
+            </label>
           </div>
 
           <div class="control-item">
@@ -169,7 +170,7 @@
               </div>
             </div>
             <label class="switch">
-              <input type="checkbox" id="btnBombaAux" onchange="toggleActuador('bomba_muestreo', this.checked)">
+              <input type="checkbox" id="btn-bomba_muestreo" onchange="toggleActuador('bomba_muestreo', this.checked)">
               <span class="slider"></span>
             </label>
           </div>
@@ -184,7 +185,7 @@
               </div>
             </div>
             <label class="switch">
-              <input type="checkbox" id="btnPeltier" onchange="toggleActuador('peltier', this.checked)">
+              <input type="checkbox" id="btn-peltier" onchange="toggleActuador('peltier', this.checked)">
               <span class="slider"></span>
             </label>
           </div>
@@ -200,7 +201,8 @@
             <input type="text" id="tracker-input" placeholder="Nombre (ej. Lote A1)...">
             <div class="tracker-inputs-row">
               <input type="date" id="tracker-date-input" title="Fecha de inicio">
-              <input type="number" id="tracker-day-input" min="1" max="30" placeholder="Día actual (ej. 8)">
+              <input type="time" id="tracker-time-input" title="Hora de inicio (Formato 24h)" value="08:00">
+              <input type="number" id="tracker-day-input" min="1" max="30" placeholder="Día inicial (ej. 1)">
               <button class="btn-add" id="btn-add-tracker"><i class="fa-solid fa-plus"></i></button>
             </div>
           </div>
