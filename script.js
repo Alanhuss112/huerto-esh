@@ -223,8 +223,8 @@ function escucharFirebase() {
         banner.style.borderColor = "var(--green-bright, #35e58a)";
         banner.style.background = "rgba(53, 229, 138, 0.08)";
         banner.innerHTML = `
-          <i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i>
-          <span>Sistema funcionando correctamente</span>
+          <i class="fa-solid fa-circle-check" style="color: var(--green-bright, #35e58a);"></i>
+          <span style="color: #ffffff;">Sistema funcionando correctamente</span>
         `;
       }
 
@@ -315,7 +315,7 @@ function marcarEsp32Desconectado() {
     banner.style.background = "rgba(255, 93, 103, 0.08)";
     banner.innerHTML = `
       <i class="fa-solid fa-triangle-exclamation" style="color: #ff5d67;"></i>
-      <span>Aviso: Dispositivo desconectado o sin red</span>
+      <span style="color: #ff5d67;">Aviso: Dispositivo desconectado o sin red</span>
     `;
   }
 }
