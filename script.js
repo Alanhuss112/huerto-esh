@@ -9,7 +9,6 @@ const firebaseConfig = {
   measurementId: "G-DGXDEVKXZ0"
 };
 
-
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -18,7 +17,7 @@ const database = firebase.database();
 let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
 const labelsHora = [];
-let esp32Timeout = null; // Control de desconexión del ESP32
+let esp32Timeout = null;
 
 const configMap = {
   ph: { label: 'Potencial de Hidrógeno (pH)', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
@@ -213,11 +212,8 @@ function toggleActuador(actuador, estado) {
 }
 
 function escucharFirebase() {
-  
   database.ref('sensores').on('value', (snapshot) => {
     const data = snapshot.val();
-    
-  
     if (data) {
       document.getElementById('statusBadge').className = "status-indicator online";
       document.getElementById('statusText').innerText = "ESP32 Conectado";
@@ -256,7 +252,6 @@ function escucharFirebase() {
         cambiarMetricaGrafica();
       }
 
-    
       if (esp32Timeout) clearTimeout(esp32Timeout);
       esp32Timeout = setTimeout(() => {
         marcarEsp32Desconectado();
@@ -264,7 +259,6 @@ function escucharFirebase() {
     }
   });
 
-  
   database.ref('actuadores').on('value', (snapshot) => {
     const act = snapshot.val();
     if (act) {
@@ -274,7 +268,6 @@ function escucharFirebase() {
     }
   });
 
-  
   database.ref('trackers').on('value', (snapshot) => {
     const container = document.getElementById('tracker-container');
     if (!container) return;
@@ -289,7 +282,6 @@ function escucharFirebase() {
     }
   });
 
-  
   database.ref('tasks').on('value', (snapshot) => {
     const container = document.getElementById('task-container');
     if (!container) return;
@@ -323,12 +315,21 @@ function marcarEsp32Desconectado() {
 function actualizarBotonUI(id, estado) {
   const btn = document.getElementById('btn-' + id);
   if (btn) {
+    btn.checked = Boolean(estado);
+  }
+
+  let statusEl = null;
+  if (id === 'bomba_principal') statusEl = document.getElementById('statusBombaPrincipal');
+  if (id === 'bomba_muestreo') statusEl = document.getElementById('statusBomba2');
+  if (id === 'peltier') statusEl = document.getElementById('statusPeltier');
+
+  if (statusEl) {
     if (estado) {
-      btn.classList.add('active');
-      btn.innerText = "Desactivar";
+      statusEl.innerHTML = `<span class="status-dot" style="background: var(--green-bright, #35e58a); box-shadow: 0 0 8px var(--green-bright, #35e58a);"></span> ENCENDIDA`;
+      statusEl.style.color = "var(--green-bright, #35e58a)";
     } else {
-      btn.classList.remove('active');
-      btn.innerText = "Activar";
+      statusEl.innerHTML = `<span class="status-dot"></span> APAGADA`;
+      statusEl.style.color = "";
     }
   }
 }
@@ -336,7 +337,7 @@ function actualizarBotonUI(id, estado) {
 function addTracker() {
   const nameInput = document.getElementById('tracker-input');
   const dateInput = document.getElementById('tracker-date-input');
-  const timeInput = document.getElementById('tracker-time-input'); // Hora inicial
+  const timeInput = document.getElementById('tracker-time-input');
   const dayInput = document.getElementById('tracker-day-input');
 
   const name = nameInput.value.trim();
@@ -360,7 +361,6 @@ function addTracker() {
 }
 
 function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
-  // Cálculo exacto considerando Fecha y Hora inicial (Formato 24 horas preciso)
   const fechaInicioStr = startTimeStr ? `${startDateStr}T${startTimeStr}:00` : `${startDateStr}T00:00:00`;
   const inicioGerminacion = new Date(fechaInicioStr);
   const hoy = new Date();
