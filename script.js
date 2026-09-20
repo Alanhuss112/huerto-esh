@@ -217,10 +217,16 @@ function escucharFirebase() {
     if (data) {
       document.getElementById('statusBadge').className = "status-indicator online";
       document.getElementById('statusText').innerText = "ESP32 Conectado";
-      document.getElementById('systemBanner').innerHTML = `
-        <i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i>
-        <span>Sistema funcionando correctamente</span>
-      `;
+      
+      const banner = document.getElementById('systemBanner');
+      if (banner) {
+        banner.style.borderColor = "var(--green-bright, #35e58a)";
+        banner.style.background = "rgba(53, 229, 138, 0.08)";
+        banner.innerHTML = `
+          <i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i>
+          <span>Sistema funcionando correctamente</span>
+        `;
+      }
 
       document.getElementById('phValue').innerText = data.ph ? data.ph.toFixed(1) : '--';
       document.getElementById('ecValue').innerText = data.ec ? data.ec.toFixed(1) : '--';
@@ -262,9 +268,9 @@ function escucharFirebase() {
   database.ref('actuadores').on('value', (snapshot) => {
     const act = snapshot.val();
     if (act) {
+      actualizarBotonUI('bomba_principal', act.bomba_principal);
       actualizarBotonUI('bomba_muestreo', act.bomba_muestreo);
       actualizarBotonUI('peltier', act.peltier);
-      actualizarBotonUI('bomba_principal', act.bomba_principal);
     }
   });
 
@@ -305,6 +311,8 @@ function marcarEsp32Desconectado() {
   if (badge) badge.className = "status-indicator offline";
   if (text) text.innerText = "ESP32 Desconectado";
   if (banner) {
+    banner.style.borderColor = "#ff5d67";
+    banner.style.background = "rgba(255, 93, 103, 0.08)";
     banner.innerHTML = `
       <i class="fa-solid fa-triangle-exclamation" style="color: #ff5d67;"></i>
       <span>Aviso: Dispositivo desconectado o sin red</span>
