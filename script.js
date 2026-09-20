@@ -92,7 +92,7 @@ function autenticar() {
   const loginCard = document.getElementById("loginCard");
   const errorMsg = document.getElementById("loginErrorMsg");
 
-  if (user === "Hidroponico2026" && pass === "Programav1") {
+  if (user === "H.G.D.A." && pass === "Hidroponico26") {
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
     }
