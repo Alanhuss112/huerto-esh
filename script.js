@@ -43,7 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnTracker) {
     btnTracker.addEventListener('click', (e) => {
       e.preventDefault();
-      if (userRole === 'guest') return;
+      const currentRole = userRole || localStorage.getItem("hidro_role");
+      if (currentRole === 'guest') return;
       addTracker();
     });
   }
@@ -53,7 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
     trackerInput.addEventListener('keypress', (e) => { 
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (userRole === 'guest') return;
+        const currentRole = userRole || localStorage.getItem("hidro_role");
+        if (currentRole === 'guest') return;
         addTracker();
       }
     });
@@ -63,7 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnTask) {
     btnTask.addEventListener('click', (e) => {
       e.preventDefault();
-      if (userRole === 'guest') return;
+      const currentRole = userRole || localStorage.getItem("hidro_role");
+      if (currentRole === 'guest') return;
       addTask();
     });
   }
@@ -73,7 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
     taskInput.addEventListener('keypress', (e) => { 
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (userRole === 'guest') return;
+        const currentRole = userRole || localStorage.getItem("hidro_role");
+        if (currentRole === 'guest') return;
         addTask();
       }
     });
@@ -186,7 +190,8 @@ function mostrarInterfaz() {
     `;
   }
 
-  if (userRole === 'guest') {
+  const currentRole = userRole || localStorage.getItem("hidro_role");
+  if (currentRole === 'guest') {
     aplicarModoObservador();
   } else {
     removerModoObservador();
@@ -317,7 +322,8 @@ function cambiarMetricaGrafica() {
 }
 
 function toggleActuador(actuador, estado) {
-  if (userRole === 'guest') return;
+  const currentRole = userRole || localStorage.getItem("hidro_role");
+  if (currentRole === 'guest') return;
   database.ref('actuadores/' + actuador).set(estado);
 }
 
@@ -461,7 +467,8 @@ function actualizarBotonUI(id, estado) {
 }
 
 function addTracker() {
-  if (userRole === 'guest') return;
+  const currentRole = userRole || localStorage.getItem("hidro_role");
+  if (currentRole === 'guest') return;
   const nameInput = document.getElementById('tracker-input');
   const dateInput = document.getElementById('tracker-date-input');
   const timeInput = document.getElementById('tracker-time-input');
@@ -504,7 +511,10 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
   const newTracker = document.createElement('div');
   newTracker.className = 'tracker-item';
 
-  const isAdmin = (userRole === 'admin');
+  // Verificación robusta del rol administrador
+  const currentRole = userRole || localStorage.getItem("hidro_role");
+  const isAdmin = (currentRole === 'admin');
+  
   let deleteButtonHTML = isAdmin ? `<button class="tracker-delete" title="Eliminar tracker"><i class="fa-solid fa-xmark"></i></button>` : '';
 
   newTracker.innerHTML = `
@@ -540,7 +550,8 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
 }
 
 function addTask() {
-  if (userRole === 'guest') return;
+  const currentRole = userRole || localStorage.getItem("hidro_role");
+  if (currentRole === 'guest') return;
   const input = document.getElementById('task-input');
   if (!input) return;
   const text = input.value.trim();
@@ -561,7 +572,10 @@ function renderTaskItem(key, text, completed) {
   const newTask = document.createElement('div');
   newTask.className = `task-item ${completed ? 'completed' : ''}`;
   
-  const isAdmin = (userRole === 'admin');
+  // Verificación robusta del rol administrador
+  const currentRole = userRole || localStorage.getItem("hidro_role");
+  const isAdmin = (currentRole === 'admin');
+  
   let deleteButtonHTML = isAdmin ? `<button class="task-delete" title="Eliminar tarea"><i class="fa-solid fa-xmark"></i></button>` : '';
 
   newTask.innerHTML = `
@@ -571,7 +585,8 @@ function renderTaskItem(key, text, completed) {
   `;
   
   newTask.addEventListener('click', function(e) {
-      if (userRole === 'guest') return; 
+      const activeRole = userRole || localStorage.getItem("hidro_role");
+      if (activeRole === 'guest') return; 
       if (!e.target.closest('.task-delete')) {
           database.ref('tasks/' + key + '/completed').set(!completed);
       }

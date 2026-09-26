@@ -496,6 +496,7 @@ body::before {
 
 .system-status-bar { display: flex; align-items: center; gap: 14px; }
 
+/* ESTADOS DEL INDICADOR DEL ESP32 (COLORES Y TEXTOS DINÁMICOS) */
 .status-indicator {
   display: flex;
   align-items: center;
@@ -506,23 +507,25 @@ body::before {
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
-  transition: all 0.3s;
+  color: var(--warning);
+  transition: all 0.3s ease;
 }
 
 .status-indicator.online {
   border-color: rgba(53, 229, 138, 0.3);
   background: rgba(53, 229, 138, 0.08);
+  color: var(--green-bright);
 }
 
 .status-indicator.online .dot {
-  background: var(--green-bright);
-  box-shadow: 0 0 12px var(--green-bright);
+  background: var(--green-bright) !important;
+  box-shadow: 0 0 12px var(--green-bright) !important;
 }
 
 .status-indicator.offline {
-  background: rgba(255, 93, 103, 0.1);
-  border-color: rgba(255, 93, 103, 0.3);
-  color: var(--danger);
+  background: rgba(255, 93, 103, 0.1) !important;
+  border-color: rgba(255, 93, 103, 0.3) !important;
+  color: var(--danger) !important;
 }
 
 .status-indicator.offline .dot {
@@ -531,7 +534,11 @@ body::before {
 }
 
 .status-indicator .dot {
-  width: 10px; height: 10px; border-radius: 50%;
+  width: 10px; 
+  height: 10px; 
+  border-radius: 50%;
+  background: var(--warning);
+  box-shadow: 0 0 12px var(--warning);
   animation: pulseDot 1.8s infinite;
 }
 
@@ -624,11 +631,34 @@ body::before {
   position: relative;
 }
 
+/* EFECTO DE BRILLO LÍQUIDO FLUIDO EN LAS BARRITAS DE PROGRESO */
 .progress-fill {
   height: 100%;
   border-radius: 10px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  overflow: hidden;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 150%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  animation: liquidShimmer 2s infinite linear;
+}
+
+@keyframes liquidShimmer {
+  0% { left: -150%; }
+  100% { left: 150%; }
 }
 
 .fill-ph { background: linear-gradient(90deg, #00f0ff, #00a8ff); }
