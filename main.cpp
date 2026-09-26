@@ -2,8 +2,8 @@
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 
-#define WIFI_SSID "TU_SSID_WIFI"
-#define WIFI_PASSWORD "TU_PASSWORD_WIFI"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 
 #define FIREBASE_HOST "huerto-propedeutico-default-rtdb.firebaseio.com" 
 #define FIREBASE_AUTH "So9FOj9vgxovOnjHWhQKCgehhRq7rPTJKj01z2vN"
