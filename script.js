@@ -1,4 +1,4 @@
-
+// Configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCPr2QN1gvo5Ngekcos86uo2maX_mHrGF0",
   authDomain: "huerto-hidroponico-esh.firebaseapp.com",
@@ -10,12 +10,10 @@ const firebaseConfig = {
   measurementId: "G-DGXDEVKXZ0"
 };
 
-
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const database = firebase.database();
-
 
 let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
@@ -95,6 +93,42 @@ function toggleMostrarPass() {
   }
 }
 
+// NUEVO: Seleccionar perfil estilo HyDE Linux
+function seleccionarPerfil(nombreUsuario) {
+  const usersGrid = document.getElementById('hydeUsersGrid');
+  const loginForm = document.getElementById('loginForm');
+  const userInput = document.getElementById('userInput');
+  const selectedUserLabel = document.getElementById('selectedUserLabel');
+  const miniAvatar = document.getElementById('hydeMiniAvatarIcon');
+  const passInput = document.getElementById('passInput');
+
+  userInput.value = nombreUsuario;
+  selectedUserLabel.innerText = nombreUsuario;
+
+  if (nombreUsuario === 'H.A.G.D.R.') {
+    miniAvatar.innerHTML = '<i class="fa-solid fa-user-shield"></i>';
+  } else {
+    miniAvatar.innerHTML = '<i class="fa-solid fa-seedling"></i>';
+  }
+
+  // Animación de transición fluida
+  usersGrid.classList.add('hidden');
+  loginForm.classList.remove('hidden');
+  passInput.focus();
+}
+
+function regresarSeleccionUsuarios() {
+  const usersGrid = document.getElementById('hydeUsersGrid');
+  const loginForm = document.getElementById('loginForm');
+  const passInput = document.getElementById('passInput');
+  const errorMsg = document.getElementById('loginErrorMsg');
+
+  passInput.value = '';
+  errorMsg.classList.add('hidden');
+  loginForm.classList.add('hidden');
+  usersGrid.classList.remove('hidden');
+}
+
 function autenticar() {
   const user = document.getElementById("userInput").value;
   const pass = document.getElementById("passInput").value;
@@ -102,8 +136,7 @@ function autenticar() {
   const loginCard = document.getElementById("loginCard");
   const errorMsg = document.getElementById("loginErrorMsg");
 
-  
-  if (user === "H.A.G.D.R." && pass === "Hidro283") {
+  if (user === "H.A.G.D.R." && pass === "Hidroponico26") {
     userRole = "admin";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
@@ -111,7 +144,7 @@ function autenticar() {
     }
     errorMsg.classList.add("hidden");
     mostrarInterfaz();
-  } else if (user === "Hidrouser" && pass === "2627") {
+  } else if (user === "Hidrop" && pass === "2627") {
     userRole = "viewer";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
@@ -135,6 +168,8 @@ function mostrarInterfaz() {
   setTimeout(() => {
     loginOverlay.classList.add("hidden");
     appContainer.classList.remove("hidden");
+    // Permitir scroll normal en el body una vez dentro
+    document.body.style.overflow = "auto";
   }, 400);
 
   ultimaVezDatos = Date.now();
@@ -153,7 +188,6 @@ function mostrarInterfaz() {
     `;
   }
 
-  
   if (userRole === 'viewer') {
     aplicarModoObservador();
   } else {
@@ -165,20 +199,14 @@ function mostrarInterfaz() {
 
 function aplicarModoObservador() {
   document.body.classList.add('role-guest'); 
-  
   const inputsSwitch = document.querySelectorAll('.control-item input[type="checkbox"]');
-  inputsSwitch.forEach(input => {
-    input.disabled = true;
-  });
+  inputsSwitch.forEach(input => { input.disabled = true; });
 }
 
 function removerModoObservador() {
   document.body.classList.remove('role-guest'); 
-  
   const inputsSwitch = document.querySelectorAll('.control-item input[type="checkbox"]');
-  inputsSwitch.forEach(input => {
-    input.disabled = false;
-  });
+  inputsSwitch.forEach(input => { input.disabled = false; });
 }
 
 function cerrarSesion() {
@@ -187,6 +215,7 @@ function cerrarSesion() {
   userRole = null;
   
   document.body.classList.remove('role-guest');
+  document.body.style.overflow = "hidden"; // Bloquear scroll temporalmente en login
   
   if (intervaloVerificacion) {
     clearInterval(intervaloVerificacion);
@@ -196,7 +225,7 @@ function cerrarSesion() {
   const loginOverlay = document.getElementById("loginOverlay");
   document.getElementById("appContainer").classList.add("hidden");
   
-  document.getElementById("passInput").value = "";
+  regresarSeleccionUsuarios();
   
   loginOverlay.classList.remove("hidden");
   setTimeout(() => { loginOverlay.style.opacity = "1"; }, 10);

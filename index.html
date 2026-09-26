@@ -13,53 +13,82 @@
 </head>
 <body>
 
-  
+  <!-- Elementos de luz ambiental animada para el fondo -->
   <div class="ambient-glow orb-1"></div>
   <div class="ambient-glow orb-2"></div>
   <div class="ambient-glow orb-3"></div>
 
-  
+  <!-- PANTALLA DE LOGIN ESTILO HYDE LINUX -->
   <div id="loginOverlay" class="login-overlay">
-    <div class="login-card" id="loginCard">
-      <div class="login-badge">SISTEMA IoT</div>
-      <div class="login-avatar-wrapper">
-        <div class="login-avatar">
-          <i class="fa-solid fa-seedling"></i>
-        </div>
-        <div class="avatar-pulse"></div>
-      </div>
-      <h2>Iniciar Sesión</h2>
-      <p class="login-subtitle">Huerto Hidropónico ESH</p>
+    <div class="login-card hyde-card" id="loginCard">
+      <div class="login-badge">HYDE SESSION MANAGER v2.0</div>
+      <h2>Seleccionar Sesión</h2>
+      <p class="login-subtitle">Huerto Hidropónico ESH - Elija su perfil</p>
       
-      <form id="loginForm" onsubmit="event.preventDefault(); autenticar();">
-        <div class="input-group">
-          <i class="fa-solid fa-user input-icon"></i>
-          <input type="text" id="userInput" placeholder="Usuario (Ej. H.A.G.D.R. o Hidrop)" required autocomplete="username">
+      <!-- Contenedor de perfiles estilo SDDM / HyDE -->
+      <div class="hyde-users-grid" id="hydeUsersGrid">
+        <div class="hyde-user-pill" onclick="seleccionarPerfil('H.A.G.D.R.')">
+          <div class="hyde-avatar-container admin-avatar">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div class="hyde-user-info">
+            <span class="hyde-username">H.A.G.D.R.</span>
+            <span class="hyde-user-role">Administrador (Control Total)</span>
+          </div>
+          <i class="fa-solid fa-chevron-right hyde-arrow"></i>
         </div>
+
+        <div class="hyde-user-pill" onclick="seleccionarPerfil('Hidrop')">
+          <div class="hyde-avatar-container guest-avatar">
+            <i class="fa-solid fa-seedling"></i>
+          </div>
+          <div class="hyde-user-info">
+            <span class="hyde-username">Hidrop</span>
+            <span class="hyde-user-role">Invitado (Modo Observador)</span>
+          </div>
+          <i class="fa-solid fa-chevron-right hyde-arrow"></i>
+        </div>
+      </div>
+
+      <!-- Formulario de contraseña desplegable (Oculto inicialmente hasta elegir perfil) -->
+      <form id="loginForm" class="hyde-form hidden" onsubmit="event.preventDefault(); autenticar();">
+        <div class="hyde-selected-banner">
+          <div class="hyde-mini-avatar" id="hydeMiniAvatarIcon"><i class="fa-solid fa-user"></i></div>
+          <div class="hyde-selected-text">
+            <span id="selectedUserLabel">Usuario</span>
+            <a href="#" onclick="regresarSeleccionUsuarios(); return false;" class="hyde-change-user">Cambiar cuenta</a>
+          </div>
+        </div>
+
+        <input type="hidden" id="userInput">
+
         <div class="input-group">
           <i class="fa-solid fa-lock input-icon"></i>
-          <input type="password" id="passInput" placeholder="Contraseña" required autocomplete="current-password">
+          <input type="password" id="passInput" placeholder="Contraseña de sesión" required autocomplete="current-password">
           <i class="fa-solid fa-eye toggle-password" id="togglePassword" onclick="toggleMostrarPass()"></i>
         </div>
+
         <div id="loginErrorMsg" class="login-error-msg hidden">
-          <i class="fa-solid fa-circle-exclamation"></i> Usuario o contraseña incorrectos
+          <i class="fa-solid fa-circle-exclamation"></i> Contraseña incorrecta
         </div>
+
         <div class="login-options">
           <label class="remember-me">
             <input type="checkbox" id="rememberMe">
             <span class="custom-checkbox"></span>
-            <span>Recordar</span>
+            <span>Recordar sesión</span>
           </label>
         </div>
+
         <button type="submit" class="btn-login" id="btnLogin">
-          <span>ACCEDER</span>
+          <span>INICIAR ENTORNO</span>
           <i class="fa-solid fa-arrow-right-long"></i>
         </button>
       </form>
     </div>
   </div>
 
-
+  <!-- CONTENEDOR PRINCIPAL DEL DASHBOARD -->
   <div id="appContainer" class="app-container hidden">
     <header class="main-header">
       <div class="header-branding">
@@ -229,7 +258,7 @@
     </main>
 
     <footer>
-      Huerto Inteligente · Escuela Superior de Huejutla · UAEH
+      Huerto Inteligente · ESP32 · Escuela Superior de Huejutla UAEH
     </footer>
   </div>
 
