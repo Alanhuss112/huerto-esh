@@ -1,3 +1,4 @@
+
 const firebaseConfig = {
   apiKey: "AIzaSyCPr2QN1gvo5Ngekcos86uo2maX_mHrGF0",
   authDomain: "huerto-hidroponico-esh.firebaseapp.com",
@@ -9,10 +10,12 @@ const firebaseConfig = {
   measurementId: "G-DGXDEVKXZ0"
 };
 
+
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const database = firebase.database();
+
 
 let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
@@ -99,7 +102,8 @@ function autenticar() {
   const loginCard = document.getElementById("loginCard");
   const errorMsg = document.getElementById("loginErrorMsg");
 
-  if (user === "H.G.D.A." && pass === "Hidroponico26") {
+  
+  if (user === "H.A.G.D.R." && pass === "Hidro283") {
     userRole = "admin";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
@@ -107,7 +111,7 @@ function autenticar() {
     }
     errorMsg.classList.add("hidden");
     mostrarInterfaz();
-  } else if (user === "Hidrop26" && pass === "2627") {
+  } else if (user === "Hidrouser" && pass === "2627") {
     userRole = "viewer";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
@@ -117,7 +121,7 @@ function autenticar() {
     mostrarInterfaz();
   } else {
     loginCard.classList.remove("shake");
-    void loginCard.offsetWidth; // Force Reflow para reiniciar la animación
+    void loginCard.offsetWidth; 
     loginCard.classList.add("shake");
     errorMsg.classList.remove("hidden");
   }
@@ -149,6 +153,7 @@ function mostrarInterfaz() {
     `;
   }
 
+  
   if (userRole === 'viewer') {
     aplicarModoObservador();
   } else {
@@ -159,35 +164,29 @@ function mostrarInterfaz() {
 }
 
 function aplicarModoObservador() {
+  document.body.classList.add('role-guest'); 
+  
   const inputsSwitch = document.querySelectorAll('.control-item input[type="checkbox"]');
   inputsSwitch.forEach(input => {
     input.disabled = true;
-    input.parentElement.style.opacity = "0.5";
-    input.parentElement.style.cursor = "not-allowed";
   });
-  const trackersForm = document.querySelector('.tracker-inputs-form');
-  if (trackersForm) trackersForm.style.display = "none";
-  const taskForm = document.querySelector('.checklist-card .input-group-add');
-  if (taskForm) taskForm.style.display = "none";
 }
 
 function removerModoObservador() {
+  document.body.classList.remove('role-guest'); 
+  
   const inputsSwitch = document.querySelectorAll('.control-item input[type="checkbox"]');
   inputsSwitch.forEach(input => {
     input.disabled = false;
-    input.parentElement.style.opacity = "1";
-    input.parentElement.style.cursor = "pointer";
   });
-  const trackersForm = document.querySelector('.tracker-inputs-form');
-  if (trackersForm) trackersForm.style.display = "flex";
-  const taskForm = document.querySelector('.checklist-card .input-group-add');
-  if (taskForm) taskForm.style.display = "flex";
 }
 
 function cerrarSesion() {
   localStorage.removeItem("hidro_logged_in");
   localStorage.removeItem("hidro_role");
   userRole = null;
+  
+  document.body.classList.remove('role-guest');
   
   if (intervaloVerificacion) {
     clearInterval(intervaloVerificacion);
@@ -196,6 +195,9 @@ function cerrarSesion() {
   
   const loginOverlay = document.getElementById("loginOverlay");
   document.getElementById("appContainer").classList.add("hidden");
+  
+  document.getElementById("passInput").value = "";
+  
   loginOverlay.classList.remove("hidden");
   setTimeout(() => { loginOverlay.style.opacity = "1"; }, 10);
 }

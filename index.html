@@ -13,15 +13,15 @@
 </head>
 <body>
 
-  <!-- Elementos de luz ambiental animada para el fondo -->
+  
   <div class="ambient-glow orb-1"></div>
   <div class="ambient-glow orb-2"></div>
   <div class="ambient-glow orb-3"></div>
 
-  <!-- PANTALLA DE LOGIN -->
+  
   <div id="loginOverlay" class="login-overlay">
     <div class="login-card" id="loginCard">
-      <div class="login-badge">SISTEMA IoT v2.0</div>
+      <div class="login-badge">SISTEMA IoT</div>
       <div class="login-avatar-wrapper">
         <div class="login-avatar">
           <i class="fa-solid fa-seedling"></i>
@@ -34,7 +34,7 @@
       <form id="loginForm" onsubmit="event.preventDefault(); autenticar();">
         <div class="input-group">
           <i class="fa-solid fa-user input-icon"></i>
-          <input type="text" id="userInput" placeholder="Usuario" required autocomplete="username">
+          <input type="text" id="userInput" placeholder="Usuario (Ej. H.A.G.D.R. o Hidrop)" required autocomplete="username">
         </div>
         <div class="input-group">
           <i class="fa-solid fa-lock input-icon"></i>
@@ -48,18 +48,18 @@
           <label class="remember-me">
             <input type="checkbox" id="rememberMe">
             <span class="custom-checkbox"></span>
-            <span>Recordarme</span>
+            <span>Recordar</span>
           </label>
         </div>
         <button type="submit" class="btn-login" id="btnLogin">
-          <span>ACCEDER AL DASHBOARD</span>
+          <span>ACCEDER</span>
           <i class="fa-solid fa-arrow-right-long"></i>
         </button>
       </form>
     </div>
   </div>
 
-  <!-- CONTENEDOR PRINCIPAL DEL DASHBOARD -->
+
   <div id="appContainer" class="app-container hidden">
     <header class="main-header">
       <div class="header-branding">
@@ -229,7 +229,7 @@
     </main>
 
     <footer>
-      Huerto Inteligente · ESP32 · Escuela Superior de Huejutla UAEH
+      Huerto Inteligente · Escuela Superior de Huejutla · UAEH
     </footer>
   </div>
 

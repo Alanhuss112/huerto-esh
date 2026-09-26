@@ -30,15 +30,23 @@
 
 html, body {
   background-color: var(--bg-dark);
-  background: var(--bg-gradient);
-  background-attachment: fixed;
   color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 
-/* ORBES DE LUZ AMBIENTAL EN EL FONDO */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: var(--bg-gradient);
+  z-index: -1;
+}
+
+
 .ambient-glow {
   position: fixed;
   border-radius: 50%;
@@ -82,7 +90,7 @@ html, body {
   100% { transform: translate(40px, 50px) scale(1.15); }
 }
 
-/* OVERLAY Y CARD DE LOGIN INTERACTIVO */
+
 .login-overlay {
   position: fixed;
   inset: 0;
@@ -130,40 +138,114 @@ html, body {
   letter-spacing: 1px;
 }
 
-.login-avatar-wrapper {
-  position: relative;
-  width: 80px;
-  height: 80px;
-  margin: -80px auto 20px auto;
-}
 
-.login-avatar {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, var(--green-bright), #00f0ff);
-  border-radius: 50%;
+.interactive-plant-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 34px;
-  color: #030d0a;
-  box-shadow: 0 10px 30px rgba(53, 229, 138, 0.4);
+  margin-top: -80px; 
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
   position: relative;
   z-index: 2;
 }
 
-.avatar-pulse {
-  position: absolute;
-  inset: -6px;
+.plant-circle {
+  width: 80px;
+  height: 80px;
+  background: rgba(53, 229, 138, 0.15);
+  border: 2px solid var(--green-bright);
   border-radius: 50%;
-  background: rgba(53, 229, 138, 0.3);
-  z-index: 1;
-  animation: pulseAura 2s infinite ease-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2.5rem;
+  color: var(--green-bright);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 0 15px rgba(53, 229, 138, 0.2);
+  animation: pulse-plant 2s infinite;
 }
 
-@keyframes pulseAura {
-  0% { transform: scale(0.9); opacity: 0.8; }
-  100% { transform: scale(1.3); opacity: 0; }
+.plant-circle:hover {
+  transform: scale(1.1) rotate(10deg);
+  background: var(--green-bright);
+  color: #030d0a;
+  box-shadow: 0 0 25px rgba(53, 229, 138, 0.4);
+}
+
+.plant-circle.active-state {
+  transform: scale(0.7) translateY(-10px);
+  animation: none;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #8ba89c;
+  background: transparent;
+  box-shadow: none;
+}
+
+@keyframes pulse-plant {
+  0% { box-shadow: 0 0 0 0 rgba(53, 229, 138, 0.4); }
+  70% { box-shadow: 0 0 0 20px rgba(53, 229, 138, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(53, 229, 138, 0); }
+}
+
+.instruction-text {
+  color: #8ba89c;
+  margin-top: 15px;
+  font-size: 0.95rem;
+  transition: opacity 0.3s ease;
+}
+
+.role-options {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s ease;
+}
+
+.role-btn {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.admin-role:hover { background: rgba(0, 240, 255, 0.2); border-color: #00f0ff; color: #00f0ff; }
+.guest-role:hover { background: rgba(255, 209, 102, 0.2); border-color: #ffd166; color: #ffd166; }
+
+.password-section {
+  width: 100%;
+  animation: fadeUp 0.4s ease forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.selected-role-label {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.user-badge {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .login-card h2 {
@@ -230,7 +312,7 @@ html, body {
   color: var(--green-bright);
 }
 
-/* SHAKE ANIMATION */
+
 .shake {
   animation: shakeAnim 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
@@ -335,11 +417,12 @@ html, body {
   display: none !important;
 }
 
-/* CONTENEDOR PRINCIPAL Y HEADER */
+
 .app-container {
   max-width: 1180px;
   margin: 0 auto;
   padding: 20px;
+  padding-bottom: 40px;
   position: relative;
   z-index: 1;
   animation: fadeInApp 0.6s ease-out;
@@ -451,7 +534,7 @@ html, body {
 .section-heading { margin: 20px 0 15px; font-size: 1.15rem; color: var(--text-main); font-weight: 700; }
 .pulse-icon { color: var(--green-bright); animation: pulseDot 2s infinite; }
 
-/* GRID Y TARJETAS */
+
 .sensors-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -513,7 +596,7 @@ html, body {
   position: relative;
 }
 
-/* EFECTO SHIMMER EN BARRAS */
+
 .progress-fill::after {
   content: '';
   position: absolute;
@@ -526,7 +609,7 @@ html, body {
   100% { left: 100%; }
 }
 
-/* GRADIENTES PERSONALIZADOS PARA SENSORES */
+
 .fill-ph { background: linear-gradient(90deg, #00f0ff, #00a8ff); }
 .fill-ce { background: linear-gradient(90deg, #ffb703, #fb8500); }
 .fill-temp { background: linear-gradient(90deg, #ff4d6d, #ff758f); }
@@ -534,7 +617,7 @@ html, body {
 
 .metric-footer { display: flex; justify-content: space-between; margin-top: 10px; color: var(--text-muted); font-size: 0.78rem; font-weight: 500; }
 
-/* BANNER DE ESTADO */
+
 .status-banner {
   padding: 15px 22px;
   border-radius: 16px;
@@ -548,7 +631,7 @@ html, body {
   transition: all 0.4s;
 }
 
-/* GRÁFICA Y CONTROLES */
+
 .chart-card { margin-bottom: 25px; }
 .chart-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
 .chart-header h3 { font-size: 1.15rem; font-weight: 700; }
@@ -596,7 +679,7 @@ html, body {
 .actuator-status { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-top: 6px; }
 .actuator-status .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #52635d; transition: all 0.3s; }
 
-/* SWITCH TOGGLE */
+
 .switch { position: relative; display: inline-block; width: 54px; height: 30px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; inset: 0; background-color: #1f3830; transition: .3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 30px; }
@@ -604,7 +687,7 @@ html, body {
 input:checked + .slider { background-color: var(--green-hover); }
 input:checked + .slider:before { transform: translateX(24px); }
 
-/* SECCIÓN INFERIOR */
+
 .bottom-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -662,7 +745,7 @@ input:checked + .slider:before { transform: translateX(24px); }
   border-radius: 8px; display: flex; overflow: hidden; position: relative; margin: 12px 0;
 }
 
-/* GRADIENTES PERSONALIZADOS PARA TRACKER DE CULTIVO */
+
 .fase-agua {
   background: linear-gradient(90deg, #00c6ff, #0072ff);
   width: 50%;
@@ -704,3 +787,22 @@ input:checked + .slider:before { transform: translateX(24px); }
 .task-delete:hover { opacity: 1; transform: scale(1.2); }
 
 footer { text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 35px 0 15px; font-weight: 500; }
+
+body.role-guest .tracker-inputs-form,
+body.role-guest .input-group-add {
+  display: none !important;
+}
+
+body.role-guest .tracker-delete,
+body.role-guest .task-delete {
+  display: none !important;
+}
+
+body.role-guest .control-item .switch {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+body.role-guest .control-item {
+  cursor: not-allowed;
+}
