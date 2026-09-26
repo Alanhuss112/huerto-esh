@@ -321,10 +321,20 @@ function cambiarMetricaGrafica() {
   });
 }
 
+// ACTUALIZACIÓN OPTIMISTA: Cambia de inmediato en pantalla sin esperar la red
 function toggleActuador(actuador, estado) {
   const currentRole = userRole || localStorage.getItem("hidro_role");
   if (currentRole === 'guest') return;
-  database.ref('actuadores/' + actuador).set(estado);
+
+  // 1. Reflejar cambios de inmediato en la interfaz local
+  actualizarBotonUI(actuador, estado);
+
+  // 2. Enviar a Firebase en segundo plano
+  database.ref('actuadores/' + actuador).set(estado).catch((error) => {
+    console.error("Error al actualizar actuador:", error);
+    // Si ocurre un error de red, revertimos el estado visual
+    actualizarBotonUI(actuador, !estado);
+  });
 }
 
 function escucharFirebase() {
@@ -511,7 +521,6 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
   const newTracker = document.createElement('div');
   newTracker.className = 'tracker-item';
 
-  // Verificación robusta del rol administrador
   const currentRole = userRole || localStorage.getItem("hidro_role");
   const isAdmin = (currentRole === 'admin');
   
@@ -572,7 +581,6 @@ function renderTaskItem(key, text, completed) {
   const newTask = document.createElement('div');
   newTask.className = `task-item ${completed ? 'completed' : ''}`;
   
-  // Verificación robusta del rol administrador
   const currentRole = userRole || localStorage.getItem("hidro_role");
   const isAdmin = (currentRole === 'admin');
   

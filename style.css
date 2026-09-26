@@ -835,3 +835,34 @@ body.role-guest .control-item .switch {
 body.role-guest .control-item {
   cursor: not-allowed;
 }
+
+/* Indicador de posición (línea que señala el día actual en el tracker) */
+.tracker-visual-bar {
+  position: relative; /* Indispensable para posicionar el cursor */
+}
+
+.tracker-cursor {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 4px;
+  background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 0 10px #ffffff, 0 0 5px var(--green-bright);
+  transform: translateX(-50%);
+  z-index: 5;
+  transition: left 0.5s ease;
+}
+
+.tracker-cursor::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: var(--green-bright);
+  border-radius: 50%;
+  border: 2px solid #030d0a;
+}
