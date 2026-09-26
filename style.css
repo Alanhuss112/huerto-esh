@@ -35,8 +35,6 @@ html, body {
   width: 100%;
   overflow-x: hidden;
   overflow-y: auto !important; /* Garantiza scroll vertical fluido sin bloqueos */
-  overscroll-behavior-y: none;
-  -webkit-tap-highlight-color: transparent;
   position: relative;
 }
 
@@ -516,14 +514,24 @@ body::before {
   background: rgba(53, 229, 138, 0.08);
 }
 
+.status-indicator.online .dot {
+  background: var(--green-bright);
+  box-shadow: 0 0 12px var(--green-bright);
+}
+
 .status-indicator.offline {
   background: rgba(255, 93, 103, 0.1);
   border-color: rgba(255, 93, 103, 0.3);
+  color: var(--danger);
+}
+
+.status-indicator.offline .dot {
+  background: var(--danger) !important;
+  box-shadow: 0 0 12px var(--danger) !important;
 }
 
 .status-indicator .dot {
   width: 10px; height: 10px; border-radius: 50%;
-  background: var(--green-bright); box-shadow: 0 0 12px var(--green-bright);
   animation: pulseDot 1.8s infinite;
 }
 
@@ -778,7 +786,7 @@ input:checked + .slider:before { transform: translateX(24px); }
 
 footer { text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 35px 0 15px; font-weight: 500; }
 
-/* Restricciones para modo invitado */
+/* Restricciones exclusivas para modo invitado (Hidrouser) */
 body.role-guest .tracker-inputs-form,
 body.role-guest .input-group-add {
   display: none !important;

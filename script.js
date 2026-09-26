@@ -18,7 +18,7 @@ const database = firebase.database();
 let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
 const labelsHora = [];
-let userRole = null;
+let userRole = null; // 'admin' o 'guest'
 let ultimaVezDatos = Date.now();
 let intervaloVerificacion = null;
 
@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnTracker) {
     btnTracker.addEventListener('click', (e) => {
       e.preventDefault();
-      if (userRole === 'viewer') return;
+      if (userRole === 'guest') return;
       addTracker();
     });
   }
@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
     trackerInput.addEventListener('keypress', (e) => { 
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (userRole === 'viewer') return;
+        if (userRole === 'guest') return;
         addTracker();
       }
     });
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnTask) {
     btnTask.addEventListener('click', (e) => {
       e.preventDefault();
-      if (userRole === 'viewer') return;
+      if (userRole === 'guest') return;
       addTask();
     });
   }
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
     taskInput.addEventListener('keypress', (e) => { 
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (userRole === 'viewer') return;
+        if (userRole === 'guest') return;
         addTask();
       }
     });
@@ -93,7 +93,7 @@ function toggleMostrarPass() {
   }
 }
 
-// NUEVO: Seleccionar perfil estilo HyDE Linux
+// Seleccionar perfil estilo HyDE Linux
 function seleccionarPerfil(nombreUsuario) {
   const usersGrid = document.getElementById('hydeUsersGrid');
   const loginForm = document.getElementById('loginForm');
@@ -111,7 +111,6 @@ function seleccionarPerfil(nombreUsuario) {
     miniAvatar.innerHTML = '<i class="fa-solid fa-seedling"></i>';
   }
 
-  // Animación de transición fluida
   usersGrid.classList.add('hidden');
   loginForm.classList.remove('hidden');
   passInput.focus();
@@ -136,7 +135,7 @@ function autenticar() {
   const loginCard = document.getElementById("loginCard");
   const errorMsg = document.getElementById("loginErrorMsg");
 
-  if (user === "H.A.G.D.R." && pass === "Hidroponico26") {
+  if (user === "H.A.G.D.R." && pass === "Hidro283") {
     userRole = "admin";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
@@ -144,11 +143,11 @@ function autenticar() {
     }
     errorMsg.classList.add("hidden");
     mostrarInterfaz();
-  } else if (user === "Hidrop" && pass === "2627") {
-    userRole = "viewer";
+  } else if (user === "Hidrouser" && pass === "2627") {
+    userRole = "guest";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
-      localStorage.setItem("hidro_role", "viewer");
+      localStorage.setItem("hidro_role", "guest");
     }
     errorMsg.classList.add("hidden");
     mostrarInterfaz();
@@ -156,7 +155,7 @@ function autenticar() {
     loginCard.classList.remove("shake");
     void loginCard.offsetWidth; 
     loginCard.classList.add("shake");
-    errorMsg.classList.remove("hidden");
+    errorMsg.classList.add("hidden");
   }
 }
 
@@ -168,7 +167,6 @@ function mostrarInterfaz() {
   setTimeout(() => {
     loginOverlay.classList.add("hidden");
     appContainer.classList.remove("hidden");
-    // Permitir scroll normal en el body una vez dentro
     document.body.style.overflow = "auto";
   }, 400);
 
@@ -188,7 +186,7 @@ function mostrarInterfaz() {
     `;
   }
 
-  if (userRole === 'viewer') {
+  if (userRole === 'guest') {
     aplicarModoObservador();
   } else {
     removerModoObservador();
@@ -215,7 +213,7 @@ function cerrarSesion() {
   userRole = null;
   
   document.body.classList.remove('role-guest');
-  document.body.style.overflow = "hidden"; // Bloquear scroll temporalmente en login
+  document.body.style.overflow = "hidden";
   
   if (intervaloVerificacion) {
     clearInterval(intervaloVerificacion);
@@ -319,7 +317,7 @@ function cambiarMetricaGrafica() {
 }
 
 function toggleActuador(actuador, estado) {
-  if (userRole === 'viewer') return;
+  if (userRole === 'guest') return;
   database.ref('actuadores/' + actuador).set(estado);
 }
 
@@ -463,7 +461,7 @@ function actualizarBotonUI(id, estado) {
 }
 
 function addTracker() {
-  if (userRole === 'viewer') return;
+  if (userRole === 'guest') return;
   const nameInput = document.getElementById('tracker-input');
   const dateInput = document.getElementById('tracker-date-input');
   const timeInput = document.getElementById('tracker-time-input');
@@ -542,7 +540,7 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
 }
 
 function addTask() {
-  if (userRole === 'viewer') return;
+  if (userRole === 'guest') return;
   const input = document.getElementById('task-input');
   if (!input) return;
   const text = input.value.trim();
@@ -573,7 +571,7 @@ function renderTaskItem(key, text, completed) {
   `;
   
   newTask.addEventListener('click', function(e) {
-      if (userRole === 'viewer') return; 
+      if (userRole === 'guest') return; 
       if (!e.target.closest('.task-delete')) {
           database.ref('tasks/' + key + '/completed').set(!completed);
       }
