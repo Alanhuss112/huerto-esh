@@ -135,7 +135,7 @@ function autenticar() {
   const loginCard = document.getElementById("loginCard");
   const errorMsg = document.getElementById("loginErrorMsg");
 
-  if (user === "H.A.G.D.R." && pass === "Hidro217") {
+  if (user === "H.A.G.D.R." && pass === "Hidroing26") {
     userRole = "admin";
     if (remember) {
       localStorage.setItem("hidro_logged_in", "true");
