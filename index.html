@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Huerto Hidropónico | ESH</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -13,10 +13,20 @@
 </head>
 <body>
 
+  <!-- Elementos de luz ambiental animada para el fondo -->
+  <div class="ambient-glow orb-1"></div>
+  <div class="ambient-glow orb-2"></div>
+  <div class="ambient-glow orb-3"></div>
+
+  <!-- PANTALLA DE LOGIN -->
   <div id="loginOverlay" class="login-overlay">
     <div class="login-card" id="loginCard">
-      <div class="login-avatar">
-        <i class="fa-solid fa-seedling"></i>
+      <div class="login-badge">SISTEMA IoT v2.0</div>
+      <div class="login-avatar-wrapper">
+        <div class="login-avatar">
+          <i class="fa-solid fa-seedling"></i>
+        </div>
+        <div class="avatar-pulse"></div>
       </div>
       <h2>Iniciar Sesión</h2>
       <p class="login-subtitle">Huerto Hidropónico ESH</p>
@@ -26,40 +36,37 @@
           <i class="fa-solid fa-user input-icon"></i>
           <input type="text" id="userInput" placeholder="Usuario" required autocomplete="username">
         </div>
-
         <div class="input-group">
           <i class="fa-solid fa-lock input-icon"></i>
           <input type="password" id="passInput" placeholder="Contraseña" required autocomplete="current-password">
           <i class="fa-solid fa-eye toggle-password" id="togglePassword" onclick="toggleMostrarPass()"></i>
         </div>
-
         <div id="loginErrorMsg" class="login-error-msg hidden">
           <i class="fa-solid fa-circle-exclamation"></i> Usuario o contraseña incorrectos
         </div>
-
         <div class="login-options">
           <label class="remember-me">
             <input type="checkbox" id="rememberMe">
+            <span class="custom-checkbox"></span>
             <span>Recordarme</span>
           </label>
         </div>
-
-        <button type="submit" class="btn-login">
-          <span>ACCEDER</span>
-          <i class="fa-solid fa-arrow-right"></i>
+        <button type="submit" class="btn-login" id="btnLogin">
+          <span>ACCEDER AL DASHBOARD</span>
+          <i class="fa-solid fa-arrow-right-long"></i>
         </button>
       </form>
     </div>
   </div>
 
+  <!-- CONTENEDOR PRINCIPAL DEL DASHBOARD -->
   <div id="appContainer" class="app-container hidden">
     <header class="main-header">
       <div class="header-branding">
         <h1>PROPEDÉUTICO CIENCIAS BÁSICAS E INGENIERÍA</h1>
         <h2>ESCUELA SUPERIOR DE HUEJUTLA</h2>
-        <h3>HUERTO HIDROPÓNICO</h3>
+        <h3>HUERTO HIDROPÓNICO IoT</h3>
       </div>
-
       <div class="system-status-bar">
         <div class="status-indicator offline" id="statusBadge">
           <span class="dot"></span>
@@ -77,48 +84,48 @@
 
     <main class="dashboard-grid">
       <div class="section-heading">
-        <h2><i class="fa-solid fa-satellite-dish"></i> Monitoreo en Tiempo Real</h2>
+        <h2><i class="fa-solid fa-satellite-dish pulse-icon"></i> Monitoreo en Tiempo Real</h2>
       </div>
 
       <div class="sensors-grid">
-        <div class="card metric-card">
+        <div class="card metric-card card-ph">
           <div class="card-header">
             <span>pH del Agua</span>
             <i class="fa-solid fa-flask icon-ph"></i>
           </div>
           <div class="metric-value"><span id="phValue">--</span> <small>pH</small></div>
           <div class="progress-bar"><div class="progress-fill fill-ph" id="phBar" style="width: 0%;"></div></div>
-          <div class="metric-footer"><span>Óptimo: 5.5 - 6.5</span></div>
+          <div class="metric-footer"><span>Rango Óptimo: 5.5 - 6.5</span></div>
         </div>
 
-        <div class="card metric-card">
+        <div class="card metric-card card-ce">
           <div class="card-header">
             <span>Conductividad (CE)</span>
             <i class="fa-solid fa-bolt icon-ce"></i>
           </div>
           <div class="metric-value"><span id="ecValue">--</span> <small>mS/cm</small></div>
           <div class="progress-bar"><div class="progress-fill fill-ce" id="ecBar" style="width: 0%;"></div></div>
-          <div class="metric-footer"><span>Óptimo: 2.0 - 2.5</span></div>
+          <div class="metric-footer"><span>Rango Óptimo: 2.0 - 2.5</span></div>
         </div>
 
-        <div class="card metric-card">
+        <div class="card metric-card card-temp">
           <div class="card-header">
             <span>Temperatura</span>
             <i class="fa-solid fa-temperature-half icon-temp"></i>
           </div>
           <div class="metric-value"><span id="tempValue">--</span> <small>°C</small></div>
           <div class="progress-bar"><div class="progress-fill fill-temp" id="tempBar" style="width: 0%;"></div></div>
-          <div class="metric-footer"><span>Óptimo: 18°C - 27°C</span></div>
+          <div class="metric-footer"><span>Rango Óptimo: 18°C - 27°C</span></div>
         </div>
 
-        <div class="card metric-card">
+        <div class="card metric-card card-hum">
           <div class="card-header">
             <span>Humedad Relativa</span>
             <i class="fa-solid fa-droplet icon-hum"></i>
           </div>
           <div class="metric-value"><span id="humValue">--</span> <small>%</small></div>
           <div class="progress-bar"><div class="progress-fill fill-hum" id="humBar" style="width: 0%;"></div></div>
-          <div class="metric-footer"><span>Ambiente</span></div>
+          <div class="metric-footer"><span>Ambiente Exterior</span></div>
         </div>
       </div>
 
@@ -145,12 +152,12 @@
       <div class="card control-card">
         <h3><i class="fa-solid fa-microchip"></i> Panel de Control</h3>
         <div class="control-grid">
-          <div class="control-item">
+          <div class="control-item" id="item-bomba_principal">
             <div class="actuator-info">
               <i class="fa-solid fa-faucet-drip actuator-icon"></i>
               <div>
                 <strong>Bomba Principal</strong>
-                <span>Sistema NFT / Riego continuo</span>
+                <span>Sistema NFT / Circulación</span>
                 <div class="actuator-status" id="statusBombaPrincipal"><span class="status-dot"></span> ESTADO</div>
               </div>
             </div>
@@ -160,12 +167,12 @@
             </label>
           </div>
 
-          <div class="control-item">
+          <div class="control-item" id="item-bomba_muestreo">
             <div class="actuator-info">
               <i class="fa-solid fa-shower actuator-icon"></i>
               <div>
                 <strong>Bomba Secundaria</strong>
-                <span>Muestreo Bypass</span>
+                <span>Mezcla / Agitación Hielera</span>
                 <div class="actuator-status" id="statusBomba2"><span class="status-dot"></span> APAGADA</div>
               </div>
             </div>
@@ -175,12 +182,12 @@
             </label>
           </div>
 
-          <div class="control-item">
+          <div class="control-item" id="item-peltier">
             <div class="actuator-info">
               <i class="fa-solid fa-snowflake actuator-icon icon-peltier"></i>
               <div>
                 <strong>Placa Peltier</strong>
-                <span>Control de temperatura</span>
+                <span>Enfriamiento Termoeléctrico</span>
                 <div class="actuator-status" id="statusPeltier"><span class="status-dot"></span> APAGADA</div>
               </div>
             </div>
@@ -202,30 +209,27 @@
             <div class="tracker-inputs-row">
               <input type="date" id="tracker-date-input" title="Fecha de inicio">
               <input type="time" id="tracker-time-input" title="Hora de inicio (Formato 24h)" value="08:00">
-              <input type="number" id="tracker-day-input" min="1" max="30" placeholder="Día inicial (ej. 1)">
+              <input type="number" id="tracker-day-input" min="1" max="30" placeholder="Día (ej. 1)">
               <button class="btn-add" id="btn-add-tracker"><i class="fa-solid fa-plus"></i></button>
             </div>
           </div>
-
           <div id="tracker-container" class="tracker-list"></div>
         </div>
 
         <div class="card checklist-card">
           <h3><i class="fa-solid fa-list-check"></i> Checklist Operativo</h3>
           <p class="card-subtitle">Gestión de tareas del huerto.</p>
-
           <div class="input-group-add">
-            <input type="text" id="task-input" placeholder="Ej: Calibrar sonda de CE...">
+            <input type="text" id="task-input" placeholder="Ej: Calibrar sonda de pH...">
             <button class="btn-add" id="btn-add-task"><i class="fa-solid fa-plus"></i></button>
           </div>
-
           <div class="task-list" id="task-container"></div>
         </div>
       </div>
     </main>
 
     <footer>
-      Huerto Inteligente · ESP32 · Sistema de Monitoreo y Control
+      Huerto Inteligente · ESP32 · Escuela Superior de Huejutla UAEH
     </footer>
   </div>
 
