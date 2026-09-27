@@ -360,7 +360,7 @@ input:checked + .slider:before { transform: translateX(24px); }
 .tracker-delete:hover { opacity: 1; transform: scale(1.2); }
 
 /* ================================================================= */
-/* TRACKER DE CULTIVO MEJORADO (DISEÑO NEÓN FLUIDO Y ESTILIZADO) */
+/* TRACKER DE CULTIVO - INDICADOR DE FLECHA ESTILO SCI-FI            */
 /* ================================================================= */
 
 .tracker-visual-bar {
@@ -370,9 +370,9 @@ input:checked + .slider:before { transform: translateX(24px); }
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px; 
   display: flex; 
-  overflow: visible; 
+  overflow: visible; /* Permite que la flecha sobresalga un poco */
   position: relative; 
-  margin: 16px 0 10px 0;
+  margin: 22px 0 16px 0;
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
@@ -406,47 +406,28 @@ input:checked + .slider:before { transform: translateX(24px); }
   letter-spacing: 0.3px;
 }
 
-/* Indicador de día actual estilo "Nodo Sci-Fi / Neón" */
+/* Indicador de día actual: Flechita flotante inferior estilo indicador */
 .tracker-cursor {
   position: absolute;
-  top: -5px;
-  bottom: -5px;
-  width: 4px;
-  background: #ffffff;
-  border-radius: 6px;
-  box-shadow: 0 0 12px #ffffff, 0 0 6px var(--green-bright);
+  bottom: -13px; /* Se posiciona justo debajo de la barra */
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 10px solid #ffffff; /* Triángulo blanco brillante */
   transform: translateX(-50%);
   z-index: 10;
   transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 8px var(--green-bright)); /* Brillo neón */
 }
 
-.tracker-cursor::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-bottom: 6px solid #ffffff;
-  filter: drop-shadow(0 -2px 4px rgba(53, 229, 138, 0.8));
+.tracker-dates { 
+  display: flex; 
+  justify-content: space-between; 
+  font-size: 0.75em; 
+  color: var(--text-muted); 
+  font-weight: 500; 
 }
-
-.tracker-cursor::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 10px;
-  height: 10px;
-  background: var(--green-bright);
-  border-radius: 50%;
-  border: 2px solid #030d0a;
-  box-shadow: 0 0 8px var(--green-bright);
-}
-
-.tracker-dates { display: flex; justify-content: space-between; font-size: 0.75em; color: var(--text-muted); font-weight: 500; }
 
 .task-list { display: flex; flex-direction: column; gap: 10px; }
 .task-item {
