@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function toggleMostrarPass() {
   const passInput = document.getElementById("passInput");
   const toggleIcon = document.getElementById("togglePassword");
+  if (!passInput || !toggleIcon) return;
   if (passInput.type === "password") {
     passInput.type = "text";
     toggleIcon.classList.replace("fa-eye", "fa-eye-slash");
@@ -79,13 +80,15 @@ function seleccionarPerfil(nombreUsuario) {
   const miniAvatar = document.getElementById('hydeMiniAvatarIcon');
   const passInput = document.getElementById('passInput');
 
-  userInput.value = nombreUsuario;
-  selectedUserLabel.innerText = nombreUsuario;
-  miniAvatar.innerHTML = (nombreUsuario === 'H.A.G.D.R.') ? '<i class="fa-solid fa-user-shield"></i>' : '<i class="fa-solid fa-seedling"></i>';
+  if (userInput) userInput.value = nombreUsuario;
+  if (selectedUserLabel) selectedUserLabel.innerText = nombreUsuario;
+  if (miniAvatar) {
+    miniAvatar.innerHTML = (nombreUsuario === 'H.A.G.D.R.') ? '<i class="fa-solid fa-user-shield"></i>' : '<i class="fa-solid fa-seedling"></i>';
+  }
 
-  usersGrid.classList.add('hidden');
-  loginForm.classList.remove('hidden');
-  passInput.focus();
+  if (usersGrid) usersGrid.classList.add('hidden');
+  if (loginForm) loginForm.classList.remove('hidden');
+  if (passInput) passInput.focus();
 }
 
 function regresarSeleccionUsuarios() {
@@ -94,34 +97,41 @@ function regresarSeleccionUsuarios() {
   const passInput = document.getElementById('passInput');
   const errorMsg = document.getElementById('loginErrorMsg');
 
-  passInput.value = '';
-  errorMsg.classList.add('hidden');
-  loginForm.classList.add('hidden');
-  usersGrid.classList.remove('hidden');
+  if (passInput) passInput.value = '';
+  if (errorMsg) errorMsg.classList.add('hidden');
+  if (loginForm) loginForm.classList.add('hidden');
+  if (usersGrid) usersGrid.classList.remove('hidden');
 }
 
 function autenticar() {
-  const user = document.getElementById("userInput").value;
-  const pass = document.getElementById("passInput").value;
-  const remember = document.getElementById("rememberMe").checked;
+  const userInputEl = document.getElementById("userInput");
+  const passInputEl = document.getElementById("passInput");
+  const rememberEl = document.getElementById("rememberMe");
   const loginCard = document.getElementById("loginCard");
   const errorMsg = document.getElementById("loginErrorMsg");
+
+  if (!userInputEl || !passInputEl) return;
+  const user = userInputEl.value;
+  const pass = passInputEl.value;
+  const remember = rememberEl ? rememberEl.checked : false;
 
   if (user === "H.A.G.D.R." && pass === "Hidroing26") {
     userRole = "admin";
     if (remember) { localStorage.setItem("hidro_logged_in", "true"); localStorage.setItem("hidro_role", "admin"); }
-    errorMsg.classList.add("hidden");
+    if (errorMsg) errorMsg.classList.add("hidden");
     mostrarInterfaz();
   } else if (user === "Hidrouser" && pass === "Erdbeer") {
     userRole = "guest";
     if (remember) { localStorage.setItem("hidro_logged_in", "true"); localStorage.setItem("hidro_role", "guest"); }
-    errorMsg.classList.add("hidden");
+    if (errorMsg) errorMsg.classList.add("hidden");
     mostrarInterfaz();
   } else {
-    loginCard.classList.remove("shake");
-    void loginCard.offsetWidth; 
-    loginCard.classList.add("shake");
-    errorMsg.classList.remove("hidden");
+    if (loginCard) {
+      loginCard.classList.remove("shake");
+      void loginCard.offsetWidth; 
+      loginCard.classList.add("shake");
+    }
+    if (errorMsg) errorMsg.classList.remove("hidden");
   }
 }
 
@@ -129,12 +139,16 @@ function mostrarInterfaz() {
   const loginOverlay = document.getElementById("loginOverlay");
   const appContainer = document.getElementById("appContainer");
 
-  loginOverlay.style.opacity = "0";
-  setTimeout(() => {
-    loginOverlay.classList.add("hidden");
+  if (loginOverlay) {
+    loginOverlay.style.opacity = "0";
+    setTimeout(() => {
+      loginOverlay.classList.add("hidden");
+    }, 400);
+  }
+  if (appContainer) {
     appContainer.classList.remove("hidden");
     document.body.style.overflow = "auto";
-  }, 400);
+  }
 
   ultimaVezDatos = Date.now();
   if ((userRole || localStorage.getItem("hidro_role")) === 'guest') {
@@ -153,11 +167,15 @@ function cerrarSesion() {
   document.body.style.overflow = "hidden";
   if (intervaloVerificacion) clearInterval(intervaloVerificacion);
   
-  document.getElementById("appContainer").classList.add("hidden");
+  const appContainer = document.getElementById("appContainer");
+  if (appContainer) appContainer.classList.add("hidden");
+  
   regresarSeleccionUsuarios();
   const loginOverlay = document.getElementById("loginOverlay");
-  loginOverlay.classList.remove("hidden");
-  setTimeout(() => { loginOverlay.style.opacity = "1"; }, 10);
+  if (loginOverlay) {
+    loginOverlay.classList.remove("hidden");
+    setTimeout(() => { loginOverlay.style.opacity = "1"; }, 10);
+  }
 }
 
 function iniciarReloj() {
@@ -172,8 +190,9 @@ function inicializarGrafica() {
   const canvasEl = document.getElementById('sensorChart');
   if (!canvasEl) return;
   const ctx = canvasEl.getContext('2d');
-  const selectedKey = document.getElementById('chartSelect').value || 'ph';
-  const currentConfig = configMap[selectedKey];
+  const chartSelectEl = document.getElementById('chartSelect');
+  const selectedKey = chartSelectEl ? chartSelectEl.value : 'ph';
+  const currentConfig = configMap[selectedKey] || configMap.ph;
   
   sensorChart = new Chart(ctx, {
     type: 'line',
@@ -207,7 +226,8 @@ function inicializarGrafica() {
 }
 
 function cambiarMetricaGrafica() {
-  const metricKey = document.getElementById('chartSelect').value;
+  const chartSelectEl = document.getElementById('chartSelect');
+  const metricKey = chartSelectEl ? chartSelectEl.value : 'ph';
   const current = configMap[metricKey] || configMap.ph;
   if (sensorChart) sensorChart.destroy();
   const canvasEl = document.getElementById('sensorChart');
@@ -293,45 +313,52 @@ function toggleActuador(actuador, estado) {
   const currentRole = userRole || localStorage.getItem("hidro_role");
   if (currentRole === 'guest') return;
   actualizarBotonUI(actuador, estado);
-  database.ref('actuadores/' + actuador).set(estado).catch((error) => {
+  database.ref('actuadores/' + actuador).set(estado).catch(() => {
     actualizarBotonUI(actuador, !estado);
   });
 }
 
 function escucharFirebase() {
+  // Estado inicial al cargar: mostrar conectando en amarillo
+  actualizarEstadoUI("connecting", "Conectando...");
+
   database.ref('sensores').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
       ultimaVezDatos = Date.now();
       
-      document.getElementById('statusBadge').className = "status-indicator online";
-      document.getElementById('statusText').innerText = "ESP32 Conectado";
-      
-      const banner = document.getElementById('systemBanner');
-      if (banner) {
-        banner.style.borderColor = "var(--green-bright)";
-        banner.style.background = "rgba(53, 229, 138, 0.08)";
-        banner.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> <span style="color: #ffffff;">Sistema funcionando correctamente</span>`;
-      }
+      // Si llegan datos, pasa inmediatamente a Verde (Conectado)
+      actualizarEstadoUI("online", "ESP32 Conectado");
 
-      document.getElementById('phValue').innerText = data.ph ? data.ph.toFixed(1) : '--';
-      document.getElementById('ecValue').innerText = data.ec ? data.ec.toFixed(1) : '--';
-      document.getElementById('tempValue').innerText = data.temperatura ? data.temperatura.toFixed(1) : '--';
-      document.getElementById('humValue').innerText = data.humedad ? Math.round(data.humedad) : '--';
+      const phVal = document.getElementById('phValue');
+      const ecVal = document.getElementById('ecValue');
+      const tempVal = document.getElementById('tempValue');
+      const humVal = document.getElementById('humValue');
 
-      if (data.ph) document.getElementById('phBar').style.width = Math.min(100, (data.ph / 14) * 100) + '%';
-      if (data.ec) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
-      if (data.temperatura) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
-      if (data.humedad) document.getElementById('humBar').style.width = data.humedad + '%';
+      if (phVal) phVal.innerText = data.ph !== undefined ? Number(data.ph).toFixed(1) : '--';
+      if (ecVal) ecVal.innerText = data.ec !== undefined ? Number(data.ec).toFixed(1) : '--';
+      if (tempVal) tempVal.innerText = data.temperatura !== undefined ? Number(data.temperatura).toFixed(1) : '--';
+      if (humVal) humVal.innerText = data.humedad !== undefined ? Math.round(data.humedad) : '--';
+
+      if (data.ph && document.getElementById('phBar')) document.getElementById('phBar').style.width = Math.min(100, (data.ph / 14) * 100) + '%';
+      if (data.ec && document.getElementById('ecBar')) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
+      if (data.temperatura && document.getElementById('tempBar')) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
+      if (data.humedad && document.getElementById('humBar')) document.getElementById('humBar').style.width = data.humedad + '%';
     }
   });
 
-  // Verificador automático de latencia (10 segundos sin datos = Desconectado)
+  // Verificador automático de latencia con estados intermedios
   if (intervaloVerificacion) clearInterval(intervaloVerificacion);
   intervaloVerificacion = setInterval(() => {
     const appContainer = document.getElementById('appContainer');
     if (appContainer && !appContainer.classList.contains('hidden')) {
-      if (ultimaVezDatos > 0 && (Date.now() - ultimaVezDatos > 10000)) {
+      const tiempoTranscurrido = Date.now() - ultimaVezDatos;
+      
+      if (tiempoTranscurrido > 10000 && tiempoTranscurrido < 30000) {
+        // Si pasan más de 10s sin datos, pasa a estado preventivo "Conectando..." (Amarillo)
+        actualizarEstadoUI("connecting", "Conectando...");
+      } else if (tiempoTranscurrido >= 30000) {
+        // Si pasan más de 30s, pasa a Rojo (Desconectado)
         marcarEsp32Desconectado();
       }
     }
@@ -373,12 +400,40 @@ function escucharFirebase() {
   });
 }
 
+function actualizarEstadoUI(estado, mensaje) {
+  const badge = document.getElementById('statusBadge');
+  const text = document.getElementById('statusText');
+  const banner = document.getElementById('systemBanner');
+
+  if (estado === "online") {
+    if (badge) {
+      badge.className = "status-indicator online";
+      badge.style.background = ""; 
+    }
+    if (text) text.innerText = mensaje;
+    if (banner) {
+      banner.style.borderColor = "var(--green-bright)";
+      banner.style.background = "rgba(53, 229, 138, 0.08)";
+      banner.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> <span style="color: #ffffff;">Sistema funcionando correctamente</span>`;
+    }
+  } else if (estado === "connecting") {
+    if (badge) {
+      badge.className = "status-indicator connecting";
+      badge.style.background = "#f1c40f"; // Amarillo preventivo
+    }
+    if (text) text.innerText = mensaje;
+  }
+}
+
 function marcarEsp32Desconectado() {
   const badge = document.getElementById('statusBadge');
   const text = document.getElementById('statusText');
   const banner = document.getElementById('systemBanner');
   
-  if (badge) badge.className = "status-indicator offline";
+  if (badge) {
+    badge.className = "status-indicator offline";
+    badge.style.background = "#ff5d67"; // Rojo
+  }
   if (text) text.innerText = "ESP32 Desconectado";
   if (banner) {
     banner.style.borderColor = "#ff5d67";
@@ -419,23 +474,32 @@ function addTracker() {
   const timeInput = document.getElementById('tracker-time-input');
   const dayInput = document.getElementById('tracker-day-input');
 
+  if (!nameInput) return;
   const name = nameInput.value.trim();
   if (!name) return;
 
+  const fechaHoy = new Date().toISOString().split('T')[0];
+
   database.ref('trackers').push({
     title: name,
-    startDate: dateInput ? dateInput.value : new Date().toISOString().split('T')[0],
-    startTime: timeInput ? timeInput.value : "08:00",
-    startDay: parseInt(dayInput ? dayInput.value : 1) || 1
+    startDate: (dateInput && dateInput.value) ? dateInput.value : fechaHoy,
+    startTime: (timeInput && timeInput.value) ? timeInput.value : "08:00",
+    startDay: parseInt(dayInput && dayInput.value ? dayInput.value : 1) || 1
   });
 
   nameInput.value = '';
+  if (dayInput) dayInput.value = '';
+  if (dateInput) dateInput.value = '';
+  if (timeInput) timeInput.value = '';
 }
 
 function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
-  const fechaInicioStr = startTimeStr ? `${startDateStr}T${startTimeStr}:00` : `${startDateStr}T00:00:00`;
+  const fechaValida = startDateStr || new Date().toISOString().split('T')[0];
+  const horaValida = startTimeStr || "00:00";
+  const fechaInicioStr = `${fechaValida}T${horaValida}:00`;
+  
   const diffDays = Math.floor(Math.max(0, new Date() - new Date(fechaInicioStr)) / (1000 * 60 * 60 * 24));
-  let currentDay = Math.min(30, Math.max(1, startDay + diffDays));
+  let currentDay = Math.min(30, Math.max(1, (startDay || 1) + diffDays));
   const percentage = Math.min(100, Math.max(0, (currentDay / 30) * 100));
 
   const container = document.getElementById('tracker-container');
@@ -459,7 +523,7 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
         <div class="tracker-cursor" style="left: ${percentage}%;"></div>
     </div>
     <div class="tracker-dates">
-        <span>Inicio: ${startDateStr || 'N/A'} ${startTimeStr ? '(' + startTimeStr + ')' : ''}</span>
+        <span>Inicio: ${fechaValida} (${horaValida})</span>
         <span>Cambio: +15d</span>
         <span>Cosecha: +30d</span>
     </div>
