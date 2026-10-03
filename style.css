@@ -359,10 +359,7 @@ input:checked + .slider:before { transform: translateX(24px); }
 .tracker-delete { color: var(--danger); background: none; border: none; font-size: 1.1em; cursor: pointer; opacity: 0.7; transition: 0.3s; }
 .tracker-delete:hover { opacity: 1; transform: scale(1.2); }
 
-/* ================================================================= */
-/* TRACKER DE CULTIVO - INDICADOR DE FLECHA ESTILO SCI-FI            */
-/* ================================================================= */
-
+/* TRACKER DE CULTIVO - INDICADOR DE FLECHA ESTILO SCI-FI */
 .tracker-visual-bar {
   width: 100%; 
   height: 28px; 
@@ -370,7 +367,7 @@ input:checked + .slider:before { transform: translateX(24px); }
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px; 
   display: flex; 
-  overflow: visible; /* Permite que la flecha sobresalga un poco */
+  overflow: visible;
   position: relative; 
   margin: 22px 0 16px 0;
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
@@ -406,19 +403,18 @@ input:checked + .slider:before { transform: translateX(24px); }
   letter-spacing: 0.3px;
 }
 
-/* Indicador de día actual: Flechita flotante inferior estilo indicador */
 .tracker-cursor {
   position: absolute;
-  bottom: -13px; /* Se posiciona justo debajo de la barra */
+  bottom: -13px;
   width: 0;
   height: 0;
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
-  border-bottom: 10px solid #ffffff; /* Triángulo blanco brillante */
+  border-bottom: 10px solid #ffffff;
   transform: translateX(-50%);
   z-index: 10;
   transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  filter: drop-shadow(0 0 8px var(--green-bright)); /* Brillo neón */
+  filter: drop-shadow(0 0 8px var(--green-bright));
 }
 
 .tracker-dates { 

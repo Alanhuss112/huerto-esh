@@ -13,11 +13,9 @@
 </head>
 <body>
 
-
   <div class="ambient-glow orb-1"></div>
   <div class="ambient-glow orb-2"></div>
   <div class="ambient-glow orb-3"></div>
-
 
   <div id="loginOverlay" class="login-overlay">
     <div class="login-card hyde-card" id="loginCard">
@@ -25,7 +23,6 @@
       <h2>Sesión</h2>
       <p class="login-subtitle">Huerto Hidropónico ESH - Elija su perfil</p>
       
-      <!-- Contenedor de perfiles estilo SDDM / HyDE -->
       <div class="hyde-users-grid" id="hydeUsersGrid">
         <div class="hyde-user-pill" onclick="seleccionarPerfil('H.A.G.D.R.')">
           <div class="hyde-avatar-container admin-avatar">
@@ -50,7 +47,6 @@
         </div>
       </div>
 
-      <!-- Formulario de contraseña desplegable (Oculto inicialmente hasta elegir perfil) -->
       <form id="loginForm" class="hyde-form hidden" onsubmit="event.preventDefault(); autenticar();">
         <div class="hyde-selected-banner">
           <div class="hyde-mini-avatar" id="hydeMiniAvatarIcon"><i class="fa-solid fa-user"></i></div>
@@ -88,7 +84,6 @@
     </div>
   </div>
 
-  <!-- CONTENEDOR PRINCIPAL DEL DASHBOARD -->
   <div id="appContainer" class="app-container hidden">
     <header class="main-header">
       <div class="header-branding">
@@ -178,6 +173,32 @@
         </div>
       </div>
 
+      <!-- NUEVA SECCIÓN: HISTORIAL DE REGISTROS PERSISTENTES -->
+      <div class="card chart-card" style="margin-top: 25px;">
+        <div class="chart-header">
+          <h3><i class="fa-solid fa-database"></i> Bitácora de Registros Históricos</h3>
+          <button class="btn-add" onclick="cargarHistorialFirebase()" style="padding: 8px 14px; font-size: 0.82rem;">
+            <i class="fa-solid fa-rotate"></i> Actualizar Bitácora
+          </button>
+        </div>
+        <div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; background: rgba(0,0,0,0.3);">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+            <thead>
+              <tr style="color: var(--green-bright); border-bottom: 1px solid var(--card-border);">
+                <th style="padding: 8px;">Marca de Tiempo</th>
+                <th style="padding: 8px;">pH</th>
+                <th style="padding: 8px;">EC (mS/cm)</th>
+                <th style="padding: 8px;">Temp (°C)</th>
+                <th style="padding: 8px;">Humedad (%)</th>
+              </tr>
+            </thead>
+            <tbody id="tablaHistorialBody" style="color: var(--text-muted);">
+              <tr><td colspan="5" style="text-align: center; padding: 15px;">Cargando registros desde Firebase...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card control-card">
         <h3><i class="fa-solid fa-microchip"></i> Panel de Control</h3>
         <div class="control-grid">
@@ -200,8 +221,8 @@
             <div class="actuator-info">
               <i class="fa-solid fa-shower actuator-icon"></i>
               <div>
-                <strong>Bomba Secundaria</strong>
-                <span>Mezcla / Agitación Hielera</span>
+                <strong>Bomba Waterblock</strong>
+                <span>Circulación de Enfriamiento Hielera</span>
                 <div class="actuator-status" id="statusBomba2"><span class="status-dot"></span> APAGADA</div>
               </div>
             </div>

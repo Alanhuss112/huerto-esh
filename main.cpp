@@ -5,8 +5,8 @@
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
 
-#define FIREBASE_HOST "huerto-propedeutico-default-rtdb.firebaseio.com" 
-#define FIREBASE_AUTH "So9FOj9vgxovOnjHWhQKCgehhRq7rPTJKj01z2vN"
+#define FIREBASE_HOST "" 
+#define FIREBASE_AUTH ""
 
 FirebaseData firebaseData;
 FirebaseConfig config;

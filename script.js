@@ -1,4 +1,4 @@
-// Configuración de Firebase
+// Configuración de Firebase[cite: 3]
 const firebaseConfig = {
   apiKey: "AIzaSyCPr2QN1gvo5Ngekcos86uo2maX_mHrGF0",
   authDomain: "huerto-hidroponico-esh.firebaseapp.com",
@@ -18,7 +18,7 @@ const database = firebase.database();
 let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
 const labelsHora = [];
-let userRole = null; // 'admin' o 'guest'
+let userRole = null; 
 let ultimaVezDatos = Date.now();
 let intervaloVerificacion = null;
 
@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarInterfaz();
   }
   escucharFirebase();
+  cargarHistorialFirebase(); // Carga inicial de la bitácora histórica
 
   const btnTracker = document.getElementById('btn-add-tracker');
   if (btnTracker) {
@@ -46,18 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentRole = userRole || localStorage.getItem("hidro_role");
       if (currentRole === 'guest') return;
       addTracker();
-    });
-  }
-
-  const trackerInput = document.getElementById('tracker-input');
-  if (trackerInput) {
-    trackerInput.addEventListener('keypress', (e) => { 
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const currentRole = userRole || localStorage.getItem("hidro_role");
-        if (currentRole === 'guest') return;
-        addTracker();
-      }
     });
   }
 
@@ -70,24 +59,11 @@ document.addEventListener("DOMContentLoaded", () => {
       addTask();
     });
   }
-
-  const taskInput = document.getElementById('task-input');
-  if (taskInput) {
-    taskInput.addEventListener('keypress', (e) => { 
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const currentRole = userRole || localStorage.getItem("hidro_role");
-        if (currentRole === 'guest') return;
-        addTask();
-      }
-    });
-  }
 });
 
 function toggleMostrarPass() {
   const passInput = document.getElementById("passInput");
   const toggleIcon = document.getElementById("togglePassword");
-  
   if (passInput.type === "password") {
     passInput.type = "text";
     toggleIcon.classList.replace("fa-eye", "fa-eye-slash");
@@ -97,7 +73,6 @@ function toggleMostrarPass() {
   }
 }
 
-// Seleccionar perfil estilo HyDE Linux
 function seleccionarPerfil(nombreUsuario) {
   const usersGrid = document.getElementById('hydeUsersGrid');
   const loginForm = document.getElementById('loginForm');
@@ -108,12 +83,7 @@ function seleccionarPerfil(nombreUsuario) {
 
   userInput.value = nombreUsuario;
   selectedUserLabel.innerText = nombreUsuario;
-
-  if (nombreUsuario === 'H.A.G.D.R.') {
-    miniAvatar.innerHTML = '<i class="fa-solid fa-user-shield"></i>';
-  } else {
-    miniAvatar.innerHTML = '<i class="fa-solid fa-seedling"></i>';
-  }
+  miniAvatar.innerHTML = (nombreUsuario === 'H.A.G.D.R.') ? '<i class="fa-solid fa-user-shield"></i>' : '<i class="fa-solid fa-seedling"></i>';
 
   usersGrid.classList.add('hidden');
   loginForm.classList.remove('hidden');
@@ -141,25 +111,19 @@ function autenticar() {
 
   if (user === "H.A.G.D.R." && pass === "Hidroing26") {
     userRole = "admin";
-    if (remember) {
-      localStorage.setItem("hidro_logged_in", "true");
-      localStorage.setItem("hidro_role", "admin");
-    }
+    if (remember) { localStorage.setItem("hidro_logged_in", "true"); localStorage.setItem("hidro_role", "admin"); }
     errorMsg.classList.add("hidden");
     mostrarInterfaz();
   } else if (user === "Hidrouser" && pass === "Erdbeer") {
     userRole = "guest";
-    if (remember) {
-      localStorage.setItem("hidro_logged_in", "true");
-      localStorage.setItem("hidro_role", "guest");
-    }
+    if (remember) { localStorage.setItem("hidro_logged_in", "true"); localStorage.setItem("hidro_role", "guest"); }
     errorMsg.classList.add("hidden");
     mostrarInterfaz();
   } else {
     loginCard.classList.remove("shake");
     void loginCard.offsetWidth; 
     loginCard.classList.add("shake");
-    errorMsg.classList.add("hidden");
+    errorMsg.classList.remove("hidden");
   }
 }
 
@@ -175,61 +139,25 @@ function mostrarInterfaz() {
   }, 400);
 
   ultimaVezDatos = Date.now();
-  const badge = document.getElementById('statusBadge');
-  const text = document.getElementById('statusText');
-  const banner = document.getElementById('systemBanner');
-  
-  if (badge) badge.className = "status-indicator";
-  if (text) text.innerText = "Conectando...";
-  if (banner) {
-    banner.style.borderColor = "#ffd166";
-    banner.style.background = "rgba(255, 209, 102, 0.08)";
-    banner.innerHTML = `
-      <i class="fa-solid fa-spinner fa-spin" style="color: #ffd166;"></i>
-      <span style="color: #ffd166;">Estableciendo conexión con el sistema...</span>
-    `;
-  }
-
-  const currentRole = userRole || localStorage.getItem("hidro_role");
-  if (currentRole === 'guest') {
-    aplicarModoObservador();
+  if (userRole === 'guest' || localStorage.getItem("hidro_role") === 'guest') {
+    document.body.classList.add('role-guest');
   } else {
-    removerModoObservador();
+    document.body.classList.remove('role-guest');
   }
-
   setTimeout(cambiarMetricaGrafica, 100);
-}
-
-function aplicarModoObservador() {
-  document.body.classList.add('role-guest'); 
-  const inputsSwitch = document.querySelectorAll('.control-item input[type="checkbox"]');
-  inputsSwitch.forEach(input => { input.disabled = true; });
-}
-
-function removerModoObservador() {
-  document.body.classList.remove('role-guest'); 
-  const inputsSwitch = document.querySelectorAll('.control-item input[type="checkbox"]');
-  inputsSwitch.forEach(input => { input.disabled = false; });
 }
 
 function cerrarSesion() {
   localStorage.removeItem("hidro_logged_in");
   localStorage.removeItem("hidro_role");
   userRole = null;
-  
   document.body.classList.remove('role-guest');
   document.body.style.overflow = "hidden";
+  if (intervaloVerificacion) clearInterval(intervaloVerificacion);
   
-  if (intervaloVerificacion) {
-    clearInterval(intervaloVerificacion);
-    intervaloVerificacion = null;
-  }
-  
-  const loginOverlay = document.getElementById("loginOverlay");
   document.getElementById("appContainer").classList.add("hidden");
-  
   regresarSeleccionUsuarios();
-  
+  const loginOverlay = document.getElementById("loginOverlay");
   loginOverlay.classList.remove("hidden");
   setTimeout(() => { loginOverlay.style.opacity = "1"; }, 10);
 }
@@ -283,9 +211,7 @@ function inicializarGrafica() {
 function cambiarMetricaGrafica() {
   const metricKey = document.getElementById('chartSelect').value;
   const current = configMap[metricKey] || configMap.ph;
-  if (sensorChart) {
-    sensorChart.destroy();
-  }
+  if (sensorChart) sensorChart.destroy();
   const canvasEl = document.getElementById('sensorChart');
   if (!canvasEl) return;
   const ctx = canvasEl.getContext('2d');
@@ -321,18 +247,56 @@ function cambiarMetricaGrafica() {
   });
 }
 
-// ACTUALIZACIÓN OPTIMISTA: Cambia de inmediato en pantalla sin esperar la red
+// CARGAR HISTORIAL PERSISTENTE DE FIREBASE Y ALIMENTAR BITÁCORA Y GRÁFICAS
+function cargarHistorialFirebase() {
+  database.ref('historial').limitToLast(30).once('value', (snapshot) => {
+    const registros = snapshot.val();
+    const tbody = document.getElementById('tablaHistorialBody');
+    if (!tbody) return;
+    
+    if (!registros) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 15px;">No hay registros históricos guardados aún.</td></tr>`;
+      return;
+    }
+
+    labelsHora.length = 0;
+    historyData.ph.length = 0;
+    historyData.temperatura.length = 0;
+    historyData.ec.length = 0;
+    historyData.humedad.length = 0;
+    tbody.innerHTML = '';
+
+    Object.keys(registros).forEach(key => {
+      const reg = registros[key];
+      const fechaLegible = reg.timestamp ? new Date(reg.timestamp).toLocaleString('es-MX') : "Registro automático";
+
+      labelsHora.push(reg.timestamp ? new Date(reg.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : "Punto");
+      historyData.ph.push(reg.ph || 0);
+      historyData.temperatura.push(reg.temperatura || 0);
+      historyData.ec.push(reg.ec || 0);
+      historyData.humedad.push(reg.humedad || 0);
+
+      const fila = document.createElement('tr');
+      fila.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+      fila.innerHTML = `
+        <td style="padding: 8px; color: var(--text-main);">${fechaLegible}</td>
+        <td style="padding: 8px;">${reg.ph ? reg.ph.toFixed(1) : '--'}</td>
+        <td style="padding: 8px;">${reg.ec ? reg.ec.toFixed(1) : '--'}</td>
+        <td style="padding: 8px;">${reg.temperatura ? reg.temperatura.toFixed(1) : '--'} °C</td>
+        <td style="padding: 8px;">${reg.humedad ? Math.round(reg.humedad) : '--'} %</td>
+      `;
+      tbody.prepend(fila); // Muestra los más recientes arriba
+    });
+
+    cambiarMetricaGrafica();
+  });
+}
+
 function toggleActuador(actuador, estado) {
   const currentRole = userRole || localStorage.getItem("hidro_role");
   if (currentRole === 'guest') return;
-
-  // 1. Reflejar cambios de inmediato en la interfaz local
   actualizarBotonUI(actuador, estado);
-
-  // 2. Enviar a Firebase en segundo plano
   database.ref('actuadores/' + actuador).set(estado).catch((error) => {
-    console.error("Error al actualizar actuador:", error);
-    // Si ocurre un error de red, revertimos el estado visual
     actualizarBotonUI(actuador, !estado);
   });
 }
@@ -342,7 +306,6 @@ function escucharFirebase() {
     const data = snapshot.val();
     if (data) {
       ultimaVezDatos = Date.now();
-      
       document.getElementById('statusBadge').className = "status-indicator online";
       document.getElementById('statusText').innerText = "ESP32 Conectado";
       
@@ -350,10 +313,7 @@ function escucharFirebase() {
       if (banner) {
         banner.style.borderColor = "var(--green-bright)";
         banner.style.background = "rgba(53, 229, 138, 0.08)";
-        banner.innerHTML = `
-          <i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i>
-          <span style="color: #ffffff;">Sistema funcionando correctamente</span>
-        `;
+        banner.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> <span style="color: #ffffff;">Sistema funcionando correctamente</span>`;
       }
 
       document.getElementById('phValue').innerText = data.ph ? data.ph.toFixed(1) : '--';
@@ -365,38 +325,8 @@ function escucharFirebase() {
       if (data.ec) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
       if (data.temperatura) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
       if (data.humedad) document.getElementById('humBar').style.width = data.humedad + '%';
-
-      const ahora = new Date();
-      const horaActual = ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      
-      if (labelsHora.length === 0 || labelsHora[labelsHora.length - 1] !== horaActual) {
-        labelsHora.push(horaActual);
-        historyData.ph.push(data.ph);
-        historyData.temperatura.push(data.temperatura);
-        historyData.ec.push(data.ec);
-        historyData.humedad.push(data.humedad);
-
-        if (labelsHora.length > 15) {
-          labelsHora.shift();
-          historyData.ph.shift();
-          historyData.temperatura.shift();
-          historyData.ec.shift();
-          historyData.humedad.shift();
-        }
-        cambiarMetricaGrafica();
-      }
     }
   });
-
-  if (intervaloVerificacion) clearInterval(intervaloVerificacion);
-  intervaloVerificacion = setInterval(() => {
-    const appContainer = document.getElementById('appContainer');
-    if (appContainer && !appContainer.classList.contains('hidden')) {
-      if (ultimaVezDatos > 0 && (Date.now() - ultimaVezDatos > 15000)) {
-        marcarEsp32Desconectado();
-      }
-    }
-  }, 3000);
 
   database.ref('actuadores').on('value', (snapshot) => {
     const act = snapshot.val();
@@ -434,28 +364,9 @@ function escucharFirebase() {
   });
 }
 
-function marcarEsp32Desconectado() {
-  const badge = document.getElementById('statusBadge');
-  const text = document.getElementById('statusText');
-  const banner = document.getElementById('systemBanner');
-  
-  if (badge) badge.className = "status-indicator offline";
-  if (text) text.innerText = "ESP32 Desconectado";
-  if (banner) {
-    banner.style.borderColor = "#ff5d67";
-    banner.style.background = "rgba(255, 93, 103, 0.08)";
-    banner.innerHTML = `
-      <i class="fa-solid fa-triangle-exclamation" style="color: #ff5d67;"></i>
-      <span style="color: #ff5d67;">Aviso: Dispositivo desconectado o sin red</span>
-    `;
-  }
-}
-
 function actualizarBotonUI(id, estado) {
   const btn = document.getElementById('btn-' + id);
-  if (btn) {
-    btn.checked = Boolean(estado);
-  }
+  if (btn) btn.checked = Boolean(estado);
 
   let itemEl = document.getElementById('item-' + id);
   let statusEl = null;
@@ -477,8 +388,6 @@ function actualizarBotonUI(id, estado) {
 }
 
 function addTracker() {
-  const currentRole = userRole || localStorage.getItem("hidro_role");
-  if (currentRole === 'guest') return;
   const nameInput = document.getElementById('tracker-input');
   const dateInput = document.getElementById('tracker-date-input');
   const timeInput = document.getElementById('tracker-time-input');
@@ -487,31 +396,19 @@ function addTracker() {
   const name = nameInput.value.trim();
   if (!name) return;
 
-  const startDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
-  const startTime = timeInput ? timeInput.value : "00:00";
-  const startDay = parseInt(dayInput ? dayInput.value : 1) || 1;
-
   database.ref('trackers').push({
     title: name,
-    startDate: startDate,
-    startTime: startTime,
-    startDay: startDay
+    startDate: dateInput ? dateInput.value : new Date().toISOString().split('T')[0],
+    startTime: timeInput ? timeInput.value : "08:00",
+    startDay: parseInt(dayInput ? dayInput.value : 1) || 1
   });
 
   nameInput.value = '';
-  if (dayInput) dayInput.value = '';
-  if (dateInput) dateInput.value = '';
-  if (timeInput) timeInput.value = '';
 }
 
 function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
   const fechaInicioStr = startTimeStr ? `${startDateStr}T${startTimeStr}:00` : `${startDateStr}T00:00:00`;
-  const inicioGerminacion = new Date(fechaInicioStr);
-  const hoy = new Date();
-  
-  const diffTime = Math.max(0, hoy - inicioGerminacion);
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  
+  const diffDays = Math.floor(Math.max(0, new Date() - new Date(fechaInicioStr)) / (1000 * 60 * 60 * 24));
   let currentDay = Math.min(30, Math.max(1, startDay + diffDays));
   const percentage = Math.min(100, Math.max(0, (currentDay / 30) * 100));
 
@@ -520,18 +417,14 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
   
   const newTracker = document.createElement('div');
   newTracker.className = 'tracker-item';
-
-  const currentRole = userRole || localStorage.getItem("hidro_role");
-  const isAdmin = (currentRole === 'admin');
-  
-  let deleteButtonHTML = isAdmin ? `<button class="tracker-delete" title="Eliminar tracker"><i class="fa-solid fa-xmark"></i></button>` : '';
+  const isAdmin = ((userRole || localStorage.getItem("hidro_role")) === 'admin');
 
   newTracker.innerHTML = `
     <div class="tracker-header">
         <span class="tracker-title">${title}</span>
         <div class="tracker-actions">
             <span class="tracker-days">Día ${currentDay} / 30</span>
-            ${deleteButtonHTML}
+            ${isAdmin ? `<button class="tracker-delete" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>` : ''}
         </div>
     </div>
     <div class="tracker-visual-bar">
@@ -539,76 +432,44 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
         <div class="fase-nutri">Fase 2: Solución 50%</div>
         <div class="tracker-cursor" style="left: ${percentage}%;"></div>
     </div>
-    <div class="tracker-dates">
-        <span>Inicio: ${startDateStr} ${startTimeStr ? '(' + startTimeStr + ')' : ''}</span>
-        <span>Cambio: +15d</span>
-        <span>Cosecha: +30d</span>
-    </div>
   `;
 
   if (isAdmin) {
-    const deleteBtn = newTracker.querySelector('.tracker-delete');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', () => {
-        database.ref('trackers/' + key).remove();
-      });
-    }
+    newTracker.querySelector('.tracker-delete')?.addEventListener('click', () => database.ref('trackers/' + key).remove());
   }
-
   container.appendChild(newTracker);
 }
 
 function addTask() {
-  const currentRole = userRole || localStorage.getItem("hidro_role");
-  if (currentRole === 'guest') return;
   const input = document.getElementById('task-input');
-  if (!input) return;
-  const text = input.value.trim();
-  if (!text) return;
-
-  database.ref('tasks').push({
-    text: text,
-    completed: false
-  });
-
+  if (!input || !input.value.trim()) return;
+  database.ref('tasks').push({ text: input.value.trim(), completed: false });
   input.value = '';
 }
 
 function renderTaskItem(key, text, completed) {
   const container = document.getElementById('task-container');
   if (!container) return;
-  
   const newTask = document.createElement('div');
   newTask.className = `task-item ${completed ? 'completed' : ''}`;
-  
-  const currentRole = userRole || localStorage.getItem("hidro_role");
-  const isAdmin = (currentRole === 'admin');
-  
-  let deleteButtonHTML = isAdmin ? `<button class="task-delete" title="Eliminar tarea"><i class="fa-solid fa-xmark"></i></button>` : '';
+  const isAdmin = ((userRole || localStorage.getItem("hidro_role")) === 'admin');
 
   newTask.innerHTML = `
       <div class="task-checkbox"><i class="fa-solid fa-check"></i></div>
       <span class="task-text">${text}</span>
-      ${deleteButtonHTML}
+      ${isAdmin ? `<button class="task-delete" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>` : ''}
   `;
   
-  newTask.addEventListener('click', function(e) {
-      const activeRole = userRole || localStorage.getItem("hidro_role");
-      if (activeRole === 'guest') return; 
-      if (!e.target.closest('.task-delete')) {
-          database.ref('tasks/' + key + '/completed').set(!completed);
-      }
+  newTask.addEventListener('click', (e) => {
+      if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
+      if (!e.target.closest('.task-delete')) database.ref('tasks/' + key + '/completed').set(!completed);
   });
 
   if (isAdmin) {
-    const deleteBtn = newTask.querySelector('.task-delete');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          database.ref('tasks/' + key).remove();
-      });
-    }
+    newTask.querySelector('.task-delete')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        database.ref('tasks/' + key).remove();
+    });
   }
-
   container.appendChild(newTask);
 }
