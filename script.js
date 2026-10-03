@@ -1,4 +1,4 @@
-// Configuración de Firebase[cite: 3]
+// Configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCPr2QN1gvo5Ngekcos86uo2maX_mHrGF0",
   authDomain: "huerto-hidroponico-esh.firebaseapp.com",
@@ -38,14 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarInterfaz();
   }
   escucharFirebase();
-  cargarHistorialFirebase(); // Carga inicial de la bitácora histórica
+  cargarHistorialFirebase();
 
   const btnTracker = document.getElementById('btn-add-tracker');
   if (btnTracker) {
     btnTracker.addEventListener('click', (e) => {
       e.preventDefault();
-      const currentRole = userRole || localStorage.getItem("hidro_role");
-      if (currentRole === 'guest') return;
+      if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
       addTracker();
     });
   }
@@ -54,8 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnTask) {
     btnTask.addEventListener('click', (e) => {
       e.preventDefault();
-      const currentRole = userRole || localStorage.getItem("hidro_role");
-      if (currentRole === 'guest') return;
+      if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
       addTask();
     });
   }
@@ -139,7 +137,7 @@ function mostrarInterfaz() {
   }, 400);
 
   ultimaVezDatos = Date.now();
-  if (userRole === 'guest' || localStorage.getItem("hidro_role") === 'guest') {
+  if ((userRole || localStorage.getItem("hidro_role")) === 'guest') {
     document.body.classList.add('role-guest');
   } else {
     document.body.classList.remove('role-guest');
@@ -247,7 +245,6 @@ function cambiarMetricaGrafica() {
   });
 }
 
-// CARGAR HISTORIAL PERSISTENTE DE FIREBASE Y ALIMENTAR BITÁCORA Y GRÁFICAS
 function cargarHistorialFirebase() {
   database.ref('historial').limitToLast(30).once('value', (snapshot) => {
     const registros = snapshot.val();
@@ -285,7 +282,7 @@ function cargarHistorialFirebase() {
         <td style="padding: 8px;">${reg.temperatura ? reg.temperatura.toFixed(1) : '--'} °C</td>
         <td style="padding: 8px;">${reg.humedad ? Math.round(reg.humedad) : '--'} %</td>
       `;
-      tbody.prepend(fila); // Muestra los más recientes arriba
+      tbody.prepend(fila);
     });
 
     cambiarMetricaGrafica();
@@ -306,6 +303,7 @@ function escucharFirebase() {
     const data = snapshot.val();
     if (data) {
       ultimaVezDatos = Date.now();
+      
       document.getElementById('statusBadge').className = "status-indicator online";
       document.getElementById('statusText').innerText = "ESP32 Conectado";
       
@@ -327,6 +325,17 @@ function escucharFirebase() {
       if (data.humedad) document.getElementById('humBar').style.width = data.humedad + '%';
     }
   });
+
+  // Verificador automático de latencia (10 segundos sin datos = Desconectado)
+  if (intervaloVerificacion) clearInterval(intervaloVerificacion);
+  intervaloVerificacion = setInterval(() => {
+    const appContainer = document.getElementById('appContainer');
+    if (appContainer && !appContainer.classList.contains('hidden')) {
+      if (ultimaVezDatos > 0 && (Date.now() - ultimaVezDatos > 10000)) {
+        marcarEsp32Desconectado();
+      }
+    }
+  }, 3000);
 
   database.ref('actuadores').on('value', (snapshot) => {
     const act = snapshot.val();
@@ -362,6 +371,23 @@ function escucharFirebase() {
       });
     }
   });
+}
+
+function marcarEsp32Desconectado() {
+  const badge = document.getElementById('statusBadge');
+  const text = document.getElementById('statusText');
+  const banner = document.getElementById('systemBanner');
+  
+  if (badge) badge.className = "status-indicator offline";
+  if (text) text.innerText = "ESP32 Desconectado";
+  if (banner) {
+    banner.style.borderColor = "#ff5d67";
+    banner.style.background = "rgba(255, 93, 103, 0.08)";
+    banner.innerHTML = `
+      <i class="fa-solid fa-triangle-exclamation" style="color: #ff5d67;"></i>
+      <span style="color: #ff5d67;">Aviso: El ESP32 no está respondiendo (Sin señal)</span>
+    `;
+  }
 }
 
 function actualizarBotonUI(id, estado) {
@@ -431,6 +457,11 @@ function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
         <div class="fase-agua">Fase 1: Agua</div>
         <div class="fase-nutri">Fase 2: Solución 50%</div>
         <div class="tracker-cursor" style="left: ${percentage}%;"></div>
+    </div>
+    <div class="tracker-dates">
+        <span>Inicio: ${startDateStr || 'N/A'} ${startTimeStr ? '(' + startTimeStr + ')' : ''}</span>
+        <span>Cambio: +15d</span>
+        <span>Cosecha: +30d</span>
     </div>
   `;
 
