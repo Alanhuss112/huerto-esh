@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Huerto Hidropónico | ESH</title>
+  
+  <!-- Configuración PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#030d0a">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/192/1892/1892751.png">
+
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -154,14 +160,14 @@
       </div>
 
       <div class="status-banner" id="systemBanner">
-        <i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i>
-        <span>Esperando la conexión...</span>
+        <i class="fa-solid fa-satellite-dish pulse-icon"></i>
+        <span>Intentando conectar...</span>
       </div>
 
       <div class="card chart-card">
         <div class="chart-header">
           <h3 id="chartTitle"><i class="fa-solid fa-chart-line"></i> Historial de Variables</h3>
-          <select id="chartSelect" class="select-metric" onchange="cambiarMetricaGrafica()">
+          <select id="chartSelect" class="select-metric">
             <option value="ph">Potencial de Hidrógeno (pH)</option>
             <option value="temperatura">Temperatura (°C)</option>
             <option value="ec">Conductividad Eléctrica (CE)</option>
@@ -173,13 +179,17 @@
         </div>
       </div>
 
-      <!-- NUEVA SECCIÓN: HISTORIAL DE REGISTROS PERSISTENTES -->
       <div class="card chart-card" style="margin-top: 25px;">
         <div class="chart-header">
           <h3><i class="fa-solid fa-database"></i> Bitácora de Registros Históricos</h3>
-          <button class="btn-add" onclick="cargarHistorialFirebase()" style="padding: 8px 14px; font-size: 0.82rem;">
-            <i class="fa-solid fa-rotate"></i> Actualizar Bitácora
-          </button>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-add" onclick="cargarHistorialFirebase()" style="padding: 8px 14px; font-size: 0.82rem;">
+              <i class="fa-solid fa-rotate"></i> Actualizar
+            </button>
+            <button class="btn-export" onclick="exportarCSV()" style="padding: 8px 14px; font-size: 0.82rem;">
+              <i class="fa-solid fa-file-csv"></i> Exportar CSV
+            </button>
+          </div>
         </div>
         <div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; background: rgba(0,0,0,0.3);">
           <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">

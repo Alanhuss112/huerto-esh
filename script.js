@@ -1,4 +1,13 @@
-// Configuración de Firebase
+// REGISTRO DE PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker registrado con éxito.', reg.scope))
+      .catch(err => console.log('Error al registrar el Service Worker:', err));
+  });
+}
+
+// Configuración de Firebase Original
 const firebaseConfig = {
   apiKey: "AIzaSyCPr2QN1gvo5Ngekcos86uo2maX_mHrGF0",
   authDomain: "huerto-hidroponico-esh.firebaseapp.com",
@@ -21,6 +30,7 @@ const labelsHora = [];
 let userRole = null; 
 let ultimaVezDatos = Date.now();
 let intervaloVerificacion = null;
+let ultimaAlertaTiempo = 0; // Control de notificaciones push
 
 const configMap = {
   ph: { label: 'Potencial de Hidrógeno (pH)', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
@@ -56,6 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
       addTask();
     });
+  }
+
+  const chartSelectEl = document.getElementById('chartSelect');
+  if (chartSelectEl) {
+    chartSelectEl.addEventListener('change', cambiarMetricaGrafica);
   }
 });
 
@@ -138,6 +153,11 @@ function autenticar() {
 function mostrarInterfaz() {
   const loginOverlay = document.getElementById("loginOverlay");
   const appContainer = document.getElementById("appContainer");
+
+  // Solicitar permiso de notificaciones al entrar
+  if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission();
+  }
 
   if (loginOverlay) {
     loginOverlay.style.opacity = "0";
@@ -265,6 +285,40 @@ function cambiarMetricaGrafica() {
   });
 }
 
+function exportarCSV() {
+  database.ref('historial').limitToLast(200).once('value', (snapshot) => {
+    const registros = snapshot.val();
+    if (!registros) {
+      alert("No hay datos históricos para exportar.");
+      return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Fecha y Hora,pH,Conductividad (mS/cm),Temperatura (°C),Humedad (%)\n";
+
+    Object.keys(registros).forEach(key => {
+      const reg = registros[key];
+      const fecha = reg.timestamp ? new Date(reg.timestamp).toLocaleString('es-MX') : "N/A";
+      const ph = reg.ph ? reg.ph.toFixed(2) : 0;
+      const ec = reg.ec ? reg.ec.toFixed(2) : 0;
+      const temp = reg.temperatura ? reg.temperatura.toFixed(2) : 0;
+      const hum = reg.humedad ? Math.round(reg.humedad) : 0;
+      
+      csvContent += `"${fecha}",${ph},${ec},${temp},${hum}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    const fileName = `Bitacora_ESH_${new Date().toISOString().split('T')[0]}.csv`;
+    link.setAttribute("download", fileName);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+}
+
 function cargarHistorialFirebase() {
   database.ref('historial').limitToLast(30).once('value', (snapshot) => {
     const registros = snapshot.val();
@@ -318,16 +372,38 @@ function toggleActuador(actuador, estado) {
   });
 }
 
+function verificarAlertas(data) {
+  const ahora = Date.now();
+  if (ahora - ultimaAlertaTiempo < 600000) return; // Limita a 10 mins
+
+  let alertas = [];
+  
+  if (data.temperatura && data.temperatura > 26) {
+    alertas.push(`¡Alerta! Temperatura alta: ${data.temperatura.toFixed(1)}°C.`);
+  } else if (data.temperatura && data.temperatura < 18) {
+    alertas.push(`¡Alerta! Temperatura baja: ${data.temperatura.toFixed(1)}°C.`);
+  }
+
+  if (data.ph && (data.ph < 5.5 || data.ph > 6.5)) {
+    alertas.push(`pH fuera de rango: ${data.ph.toFixed(1)}.`);
+  }
+
+  if (alertas.length > 0 && Notification.permission === "granted") {
+    new Notification("Alerta Huerto ESH", {
+      body: alertas.join("\n"),
+      icon: "https://cdn-icons-png.flaticon.com/512/1892/1892751.png"
+    });
+    ultimaAlertaTiempo = ahora;
+  }
+}
+
 function escucharFirebase() {
-  // Estado inicial al cargar: mostrar conectando en amarillo
-  actualizarEstadoUI("connecting", "Conectando...");
+  actualizarEstadoUI("connecting", "Intentando conectar...");
 
   database.ref('sensores').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
       ultimaVezDatos = Date.now();
-      
-      // Si llegan datos, pasa inmediatamente a Verde (Conectado)
       actualizarEstadoUI("online", "ESP32 Conectado");
 
       const phVal = document.getElementById('phValue');
@@ -344,21 +420,42 @@ function escucharFirebase() {
       if (data.ec && document.getElementById('ecBar')) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
       if (data.temperatura && document.getElementById('tempBar')) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
       if (data.humedad && document.getElementById('humBar')) document.getElementById('humBar').style.width = data.humedad + '%';
+
+      verificarAlertas(data); // LLAMADA A NOTIFICACIONES
+
+      const horaActual = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      labelsHora.push(horaActual);
+      historyData.ph.push(data.ph !== undefined ? Number(data.ph) : 0);
+      historyData.temperatura.push(data.temperatura !== undefined ? Number(data.temperatura) : 0);
+      historyData.ec.push(data.ec !== undefined ? Number(data.ec) : 0);
+      historyData.humedad.push(data.humedad !== undefined ? Number(data.humedad) : 0);
+
+      if (labelsHora.length > 20) {
+        labelsHora.shift();
+        historyData.ph.shift();
+        historyData.temperatura.shift();
+        historyData.ec.shift();
+        historyData.humedad.shift();
+      }
+
+      if (sensorChart) {
+        const chartSelectEl = document.getElementById('chartSelect');
+        const metricKey = chartSelectEl ? chartSelectEl.value : 'ph';
+        sensorChart.data.labels = labelsHora;
+        sensorChart.data.datasets[0].data = historyData[metricKey];
+        sensorChart.update();
+      }
     }
   });
 
-  // Verificador automático de latencia con estados intermedios
   if (intervaloVerificacion) clearInterval(intervaloVerificacion);
   intervaloVerificacion = setInterval(() => {
     const appContainer = document.getElementById('appContainer');
     if (appContainer && !appContainer.classList.contains('hidden')) {
       const tiempoTranscurrido = Date.now() - ultimaVezDatos;
-      
       if (tiempoTranscurrido > 10000 && tiempoTranscurrido < 30000) {
-        // Si pasan más de 10s sin datos, pasa a estado preventivo "Conectando..." (Amarillo)
-        actualizarEstadoUI("connecting", "Conectando...");
+        actualizarEstadoUI("connecting", "Reconectando...");
       } else if (tiempoTranscurrido >= 30000) {
-        // Si pasan más de 30s, pasa a Rojo (Desconectado)
         marcarEsp32Desconectado();
       }
     }
@@ -412,16 +509,19 @@ function actualizarEstadoUI(estado, mensaje) {
     }
     if (text) text.innerText = mensaje;
     if (banner) {
-      banner.style.borderColor = "var(--green-bright)";
-      banner.style.background = "rgba(53, 229, 138, 0.08)";
-      banner.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> <span style="color: #ffffff;">Sistema funcionando correctamente</span>`;
+      banner.className = "status-banner banner-online";
+      banner.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Enlace exitoso: Sistema funcionando correctamente</span>`;
     }
   } else if (estado === "connecting") {
     if (badge) {
       badge.className = "status-indicator connecting";
-      badge.style.background = "#f1c40f"; // Amarillo preventivo
+      badge.style.background = ""; 
     }
     if (text) text.innerText = mensaje;
+    if (banner) {
+      banner.className = "status-banner banner-connecting";
+      banner.innerHTML = `<i class="fa-solid fa-satellite-dish pulse-icon"></i> <span>Esperando conexión o intentando reconectar...</span>`;
+    }
   }
 }
 
@@ -432,15 +532,14 @@ function marcarEsp32Desconectado() {
   
   if (badge) {
     badge.className = "status-indicator offline";
-    badge.style.background = "#ff5d67"; // Rojo
+    badge.style.background = ""; 
   }
   if (text) text.innerText = "ESP32 Desconectado";
   if (banner) {
-    banner.style.borderColor = "#ff5d67";
-    banner.style.background = "rgba(255, 93, 103, 0.08)";
+    banner.className = "status-banner banner-offline";
     banner.innerHTML = `
-      <i class="fa-solid fa-triangle-exclamation" style="color: #ff5d67;"></i>
-      <span style="color: #ff5d67;">Aviso: El ESP32 no está respondiendo (Sin señal)</span>
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>Aviso: El ESP32 no está respondiendo (Sin señal)</span>
     `;
   }
 }

@@ -1,0 +1,21 @@
+{
+  "name": "Huerto Hidropónico IoT ESH",
+  "short_name": "Huerto ESH",
+  "description": "Panel de control y monitoreo del huerto hidropónico - Escuela Superior de Huejutla",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#030d0a",
+  "theme_color": "#35e58a",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/192/1892/1892751.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1892/1892751.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
