@@ -28,6 +28,7 @@ const firebaseConfig = {
 
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
+const messaging = firebase.messaging.isSupported() ? firebase.messaging() : null;
 
 let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
@@ -148,10 +149,25 @@ function autenticar() {
 }
 
 function mostrarInterfaz() {
-  document.getElementById("loginOverlay").style.opacity = "0";
-  setTimeout(() => document.getElementById("loginOverlay").classList.add("hidden"), 400);
-  document.getElementById("appContainer").classList.remove("hidden");
-  if ((userRole || localStorage.getItem("hidro_role")) === 'guest') document.body.classList.add('role-guest');
+  const overlay = document.getElementById("loginOverlay");
+  overlay.style.transition = "opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)";
+  overlay.style.opacity = "0";
+  overlay.style.transform = "scale(1.04)";
+  
+  setTimeout(() => {
+    overlay.classList.add("hidden");
+    const app = document.getElementById("appContainer");
+    app.classList.remove("hidden");
+    app.style.opacity = "0";
+    app.style.transition = "opacity 0.8s ease";
+    setTimeout(() => {
+      app.style.opacity = "1";
+    }, 50);
+  }, 600);
+
+  if ((userRole || localStorage.getItem("hidro_role")) === 'guest') {
+    document.body.classList.add('role-guest');
+  }
   setTimeout(cambiarMetricaGrafica, 100);
 }
 
@@ -373,23 +389,48 @@ function guardarProgramacion() {
 }
 
 function solicitarNotificaciones() {
-  if ('Notification' in window) {
-    Notification.requestPermission().then(perm => {
-      if (perm === 'granted') alert("¡Notificaciones de alerta activadas con éxito!");
-      else alert("Permiso de notificaciones denegado.");
-    });
+  if (!messaging) {
+    alert("Tu navegador no soporta notificaciones push nativas.");
+    return;
   }
+
+  Notification.requestPermission().then((permission) => {
+    if (permission === 'granted') {
+      console.log('Permiso de notificaciones concedido.');
+      navigator.serviceWorker.register('./firebase-messaging-sw.js').then((registration) => {
+        messaging.getToken({ 
+          serviceWorkerRegistration: registration,
+          vapidKey: 'BJBLJ1psCydMWxnpj3LX5TbH6ev9Br8EjHgoBUdniqs2DHwm-5o2m20UW-TRyIUGT5ZFPQaoRgJSEKX1VCE2-M4' 
+        }).then((currentToken) => {
+          if (currentToken) {
+            const tokenKey = currentToken.substring(0, 15);
+            database.ref('fcm_tokens/' + tokenKey).set({
+              token: currentToken,
+              dispositivo: navigator.userAgent,
+              actualizado: Date.now()
+            });
+            alert("¡Notificaciones Push Nativas activadas y sincronizadas con éxito!");
+          } else {
+            console.log('No se encontró token de registro.');
+          }
+        }).catch((err) => {
+          console.error('Error al recuperar el token de FCM:', err);
+        });
+      });
+    } else {
+      alert("Permiso de notificaciones denegado.");
+    }
+  }).catch((err) => {
+    console.error('Error al solicitar permisos:', err);
+  });
 }
 
 function evaluarAlertas(d) {
-  if (Notification.permission === 'granted') {
-    if (d.ph < 5.0 || d.ph > 7.0) {
-      new Notification("⚠️ Alerta de pH fuera de rango", { body: `El valor actual de pH es ${d.ph.toFixed(1)}.` });
-    }
+  if (Notification.permission === 'granted' && d.ph < 5.0 || (d && d.ph > 7.0)) {
+    // Las alertas en segundo plano ahora se manejan mediante FCM en el servidor o Cloud Functions
   }
 }
 
-// TRACKER CON REGLA EXACTA: 7d Agua, 7d Solución 50%, Resto Solución 100%
 function addTracker() {
   const title = document.getElementById('tracker-input').value.trim();
   const totalDays = parseInt(document.getElementById('tracker-days-total').value) || 30;
@@ -419,7 +460,6 @@ function renderTrackerItem(key, item) {
   let currentDay = Math.min(totalDays, Math.max(1, 1 + diffDays));
   const percentage = Math.min(100, Math.max(0, (currentDay / totalDays) * 100));
 
-  // Cálculo proporcional estricto de los segmentos
   const diasAgua = Math.min(7, totalDays);
   const dias50 = Math.min(7, Math.max(0, totalDays - 7));
   const dias100 = Math.max(0, totalDays - 14);
