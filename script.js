@@ -1,13 +1,21 @@
-// REGISTRO DE PWA
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btnInstall = document.getElementById('btnInstallApp');
+  if (btnInstall) {
+    btnInstall.classList.remove('hidden');
+    btnInstall.addEventListener('click', () => {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => { deferredPrompt = null; btnInstall.classList.add('hidden'); });
+    });
+  }
+});
+
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registrado con éxito.', reg.scope))
-      .catch(err => console.log('Error al registrar el Service Worker:', err));
-  });
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
 }
 
-// Configuración de Firebase Original
 const firebaseConfig = {
   apiKey: "AIzaSyCPr2QN1gvo5Ngekcos86uo2maX_mHrGF0",
   authDomain: "huerto-hidroponico-esh.firebaseapp.com",
@@ -15,27 +23,24 @@ const firebaseConfig = {
   projectId: "huerto-hidroponico-esh",
   storageBucket: "huerto-hidroponico-esh.firebasestorage.app",
   messagingSenderId: "380114491557",
-  appId: "1:380114491557:web:bf85a1b207638093abd54c",
-  measurementId: "G-DGXDEVKXZ0"
+  appId: "1:380114491557:web:bf85a1b207638093abd54c"
 };
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 let sensorChart;
 const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
 const labelsHora = [];
 let userRole = null; 
+let huertoActivo = 'nft';
 let ultimaVezDatos = Date.now();
 let intervaloVerificacion = null;
-let ultimaAlertaTiempo = 0; // Control de notificaciones push
 
 const configMap = {
-  ph: { label: 'Potencial de Hidrógeno (pH)', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
+  ph: { label: 'pH', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
   temperatura: { label: 'Temperatura (°C)', color: '#ff5d67', bg: 'rgba(255, 93, 103, 0.15)' },
-  ec: { label: 'Conductividad (mS/cm)', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.15)' },
+  ec: { label: 'CE (mS/cm)', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.15)' },
   humedad: { label: 'Humedad (%)', color: '#35e58a', bg: 'rgba(53, 229, 138, 0.15)' }
 };
 
@@ -43,426 +48,211 @@ document.addEventListener("DOMContentLoaded", () => {
   iniciarReloj();
   inicializarGrafica();
   
+  // Cargar tema visual guardado
+  const savedTheme = localStorage.getItem("hidro_theme") || "theme-emerald";
+  cambiarTemaVisual(savedTheme, false);
+  const themeSel = document.getElementById('themeSelector');
+  if (themeSel) themeSel.value = savedTheme;
+
   if (localStorage.getItem("hidro_logged_in") === "true") {
     userRole = localStorage.getItem("hidro_role") || "admin";
     mostrarInterfaz();
   }
   escucharFirebase();
   cargarHistorialFirebase();
-
-  const btnTracker = document.getElementById('btn-add-tracker');
-  if (btnTracker) {
-    btnTracker.addEventListener('click', (e) => {
-      e.preventDefault();
-      if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
-      addTracker();
-    });
-  }
-
-  const btnTask = document.getElementById('btn-add-task');
-  if (btnTask) {
-    btnTask.addEventListener('click', (e) => {
-      e.preventDefault();
-      if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
-      addTask();
-    });
-  }
-
-  const chartSelectEl = document.getElementById('chartSelect');
-  if (chartSelectEl) {
-    chartSelectEl.addEventListener('change', cambiarMetricaGrafica);
-  }
+  cargarMantenimientoFirebase();
 });
 
-function toggleMostrarPass() {
-  const passInput = document.getElementById("passInput");
-  const toggleIcon = document.getElementById("togglePassword");
-  if (!passInput || !toggleIcon) return;
-  if (passInput.type === "password") {
-    passInput.type = "text";
-    toggleIcon.classList.replace("fa-eye", "fa-eye-slash");
-  } else {
-    passInput.type = "password";
-    toggleIcon.classList.replace("fa-eye-slash", "fa-eye");
-  }
+// 1. Selector de Temas Visuales
+function cambiarTemaVisual(themeName, guardar = true) {
+  document.body.className = themeName;
+  if (guardar) localStorage.setItem("hidro_theme", themeName);
 }
 
-function seleccionarPerfil(nombreUsuario) {
-  const usersGrid = document.getElementById('hydeUsersGrid');
-  const loginForm = document.getElementById('loginForm');
-  const userInput = document.getElementById('userInput');
-  const selectedUserLabel = document.getElementById('selectedUserLabel');
-  const miniAvatar = document.getElementById('hydeMiniAvatarIcon');
-  const passInput = document.getElementById('passInput');
+function cambiarHuerto(tipo, btnElement) {
+  huertoActivo = tipo;
+  document.querySelectorAll('.huerto-tab').forEach(t => t.classList.remove('active'));
+  btnElement.classList.add('active');
+  document.getElementById('currentHuertoTitle').innerText = tipo === 'nft' ? 'Huerto NFT' : 'Raíces Flotantes';
+  escucharFirebase();
+}
 
-  if (userInput) userInput.value = nombreUsuario;
-  if (selectedUserLabel) selectedUserLabel.innerText = nombreUsuario;
-  if (miniAvatar) {
-    miniAvatar.innerHTML = (nombreUsuario === 'H.A.G.D.R.') ? '<i class="fa-solid fa-user-shield"></i>' : '<i class="fa-solid fa-seedling"></i>';
-  }
+function toggleMostrarPass() {
+  const pass = document.getElementById("passInput");
+  const icon = document.getElementById("togglePassword");
+  if (!pass) return;
+  if (pass.type === "password") { pass.type = "text"; icon.classList.replace("fa-eye", "fa-eye-slash"); }
+  else { pass.type = "password"; icon.classList.replace("fa-eye-slash", "fa-eye"); }
+}
 
-  if (usersGrid) usersGrid.classList.add('hidden');
-  if (loginForm) loginForm.classList.remove('hidden');
-  if (passInput) passInput.focus();
+function seleccionarPerfil(user) {
+  document.getElementById('userInput').value = user;
+  document.getElementById('selectedUserLabel').innerText = user;
+  document.getElementById('hydeMiniAvatarIcon').innerHTML = (user === 'H.A.G.D.R.') ? '<i class="fa-solid fa-user-shield"></i>' : '<i class="fa-solid fa-seedling"></i>';
+  document.getElementById('hydeUsersGrid').classList.add('hidden');
+  document.getElementById('loginForm').classList.remove('hidden');
+  document.getElementById('passInput').focus();
 }
 
 function regresarSeleccionUsuarios() {
-  const usersGrid = document.getElementById('hydeUsersGrid');
-  const loginForm = document.getElementById('loginForm');
-  const passInput = document.getElementById('passInput');
-  const errorMsg = document.getElementById('loginErrorMsg');
-
-  if (passInput) passInput.value = '';
-  if (errorMsg) errorMsg.classList.add('hidden');
-  if (loginForm) loginForm.classList.add('hidden');
-  if (usersGrid) usersGrid.classList.remove('hidden');
+  document.getElementById('passInput').value = '';
+  document.getElementById('loginErrorMsg').classList.add('hidden');
+  document.getElementById('loginForm').classList.add('hidden');
+  document.getElementById('hydeUsersGrid').classList.remove('hidden');
 }
 
 function autenticar() {
-  const userInputEl = document.getElementById("userInput");
-  const passInputEl = document.getElementById("passInput");
-  const rememberEl = document.getElementById("rememberMe");
-  const loginCard = document.getElementById("loginCard");
-  const errorMsg = document.getElementById("loginErrorMsg");
+  const user = document.getElementById("userInput").value;
+  const pass = document.getElementById("passInput").value;
+  const remember = document.getElementById("rememberMe").checked;
 
-  if (!userInputEl || !passInputEl) return;
-  const user = userInputEl.value;
-  const pass = passInputEl.value;
-  const remember = rememberEl ? rememberEl.checked : false;
-
-  if (user === "H.A.G.D.R." && pass === "Hidroing26") {
-    userRole = "admin";
-    if (remember) { localStorage.setItem("hidro_logged_in", "true"); localStorage.setItem("hidro_role", "admin"); }
-    if (errorMsg) errorMsg.classList.add("hidden");
-    mostrarInterfaz();
-  } else if (user === "Hidrouser" && pass === "Erdbeer") {
-    userRole = "guest";
-    if (remember) { localStorage.setItem("hidro_logged_in", "true"); localStorage.setItem("hidro_role", "guest"); }
-    if (errorMsg) errorMsg.classList.add("hidden");
+  if ((user === "H.A.G.D.R." && pass === "Hidroing26") || (user === "Hidrouser" && pass === "Erdbeer")) {
+    userRole = (user === "H.A.G.D.R.") ? "admin" : "guest";
+    if (remember) { localStorage.setItem("hidro_logged_in", "true"); localStorage.setItem("hidro_role", userRole); }
     mostrarInterfaz();
   } else {
-    if (loginCard) {
-      loginCard.classList.remove("shake");
-      void loginCard.offsetWidth; 
-      loginCard.classList.add("shake");
-    }
-    if (errorMsg) errorMsg.classList.remove("hidden");
+    document.getElementById('loginCard').classList.add("shake");
+    setTimeout(() => document.getElementById('loginCard').classList.remove("shake"), 500);
+    document.getElementById("loginErrorMsg").classList.remove("hidden");
   }
 }
 
 function mostrarInterfaz() {
-  const loginOverlay = document.getElementById("loginOverlay");
-  const appContainer = document.getElementById("appContainer");
-
-  // Solicitar permiso de notificaciones al entrar
-  if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-    Notification.requestPermission();
-  }
-
-  if (loginOverlay) {
-    loginOverlay.style.opacity = "0";
-    setTimeout(() => {
-      loginOverlay.classList.add("hidden");
-    }, 400);
-  }
-  if (appContainer) {
-    appContainer.classList.remove("hidden");
-    document.body.style.overflow = "auto";
-  }
-
-  ultimaVezDatos = Date.now();
-  if ((userRole || localStorage.getItem("hidro_role")) === 'guest') {
-    document.body.classList.add('role-guest');
-  } else {
-    document.body.classList.remove('role-guest');
-  }
+  document.getElementById("loginOverlay").style.opacity = "0";
+  setTimeout(() => document.getElementById("loginOverlay").classList.add("hidden"), 400);
+  document.getElementById("appContainer").classList.remove("hidden");
+  if ((userRole || localStorage.getItem("hidro_role")) === 'guest') document.body.classList.add('role-guest');
   setTimeout(cambiarMetricaGrafica, 100);
 }
 
 function cerrarSesion() {
-  localStorage.removeItem("hidro_logged_in");
-  localStorage.removeItem("hidro_role");
-  userRole = null;
-  document.body.classList.remove('role-guest');
-  document.body.style.overflow = "hidden";
-  if (intervaloVerificacion) clearInterval(intervaloVerificacion);
-  
-  const appContainer = document.getElementById("appContainer");
-  if (appContainer) appContainer.classList.add("hidden");
-  
-  regresarSeleccionUsuarios();
-  const loginOverlay = document.getElementById("loginOverlay");
-  if (loginOverlay) {
-    loginOverlay.classList.remove("hidden");
-    setTimeout(() => { loginOverlay.style.opacity = "1"; }, 10);
-  }
+  localStorage.removeItem("hidro_logged_in"); localStorage.removeItem("hidro_role");
+  location.reload();
 }
 
 function iniciarReloj() {
   setInterval(() => {
-    const ahora = new Date();
-    const relojEl = document.getElementById("liveClock");
-    if (relojEl) relojEl.innerText = ahora.toLocaleTimeString('es-MX');
+    const reloj = document.getElementById("liveClock");
+    if (reloj) reloj.innerText = new Date().toLocaleTimeString('es-MX');
   }, 1000);
 }
 
 function inicializarGrafica() {
-  const canvasEl = document.getElementById('sensorChart');
-  if (!canvasEl) return;
-  const ctx = canvasEl.getContext('2d');
-  const chartSelectEl = document.getElementById('chartSelect');
-  const selectedKey = chartSelectEl ? chartSelectEl.value : 'ph';
-  const currentConfig = configMap[selectedKey] || configMap.ph;
-  
-  sensorChart = new Chart(ctx, {
+  const canvas = document.getElementById('sensorChart');
+  if (!canvas) return;
+  sensorChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
-    data: {
-      labels: labelsHora,
-      datasets: [{
-        label: currentConfig.label,
-        data: historyData[selectedKey],
-        borderColor: currentConfig.color,
-        backgroundColor: currentConfig.bg,
-        borderWidth: 3,
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: '#ffffff',
-        pointBorderColor: currentConfig.color,
-        pointRadius: 4,
-        pointHoverRadius: 7
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 400 },
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#8ba89c' }, grid: { color: 'rgba(255, 255, 255, 0.03)' } },
-        y: { ticks: { color: '#8ba89c' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
-      }
-    }
+    data: { labels: labelsHora, datasets: [{ label: 'pH', data: historyData.ph, borderColor: '#00f0ff', borderWidth: 2, tension: 0.3, fill: true }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
+  document.getElementById('chartSelect').addEventListener('change', cambiarMetricaGrafica);
 }
 
 function cambiarMetricaGrafica() {
-  const chartSelectEl = document.getElementById('chartSelect');
-  const metricKey = chartSelectEl ? chartSelectEl.value : 'ph';
-  const current = configMap[metricKey] || configMap.ph;
+  const metric = document.getElementById('chartSelect').value;
+  const cfg = configMap[metric];
   if (sensorChart) sensorChart.destroy();
-  const canvasEl = document.getElementById('sensorChart');
-  if (!canvasEl) return;
-  const ctx = canvasEl.getContext('2d');
-  
-  sensorChart = new Chart(ctx, {
+  sensorChart = new Chart(document.getElementById('sensorChart').getContext('2d'), {
     type: 'line',
-    data: {
-      labels: labelsHora,
-      datasets: [{
-        label: current.label,
-        data: historyData[metricKey],
-        borderColor: current.color,
-        backgroundColor: current.bg,
-        borderWidth: 3,
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: '#ffffff',
-        pointBorderColor: current.color,
-        pointRadius: 4,
-        pointHoverRadius: 7
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 400 },
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#8ba89c' }, grid: { color: 'rgba(255, 255, 255, 0.03)' } },
-        y: { ticks: { color: '#8ba89c' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
-      }
-    }
+    data: { labels: labelsHora, datasets: [{ label: cfg.label, data: historyData[metric], borderColor: cfg.color, backgroundColor: cfg.bg, borderWidth: 3, tension: 0.4, fill: true }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
+  calcularEstadisticasAvanzadas(metric);
+}
+
+// 2. Analítica y Estadísticas Avanzadas (Mín, Máx, Promedio)
+function calcularEstadisticasAvanzadas(metric) {
+  const arr = historyData[metric];
+  if (!arr || arr.length === 0) {
+    document.getElementById('statMin').innerText = '--';
+    document.getElementById('statAvg').innerText = '--';
+    document.getElementById('statMax').innerText = '--';
+    return;
+  }
+  const min = Math.min(...arr);
+  const max = Math.max(...arr);
+  const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+
+  document.getElementById('statMin').innerText = min.toFixed(2);
+  document.getElementById('statAvg').innerText = avg.toFixed(2);
+  document.getElementById('statMax').innerText = max.toFixed(2);
 }
 
 function exportarCSV() {
-  database.ref('historial').limitToLast(200).once('value', (snapshot) => {
-    const registros = snapshot.val();
-    if (!registros) {
-      alert("No hay datos históricos para exportar.");
-      return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Fecha y Hora,pH,Conductividad (mS/cm),Temperatura (°C),Humedad (%)\n";
-
-    Object.keys(registros).forEach(key => {
-      const reg = registros[key];
-      const fecha = reg.timestamp ? new Date(reg.timestamp).toLocaleString('es-MX') : "N/A";
-      const ph = reg.ph ? reg.ph.toFixed(2) : 0;
-      const ec = reg.ec ? reg.ec.toFixed(2) : 0;
-      const temp = reg.temperatura ? reg.temperatura.toFixed(2) : 0;
-      const hum = reg.humedad ? Math.round(reg.humedad) : 0;
-      
-      csvContent += `"${fecha}",${ph},${ec},${temp},${hum}\n`;
+  database.ref('historial').limitToLast(300).once('value', (snap) => {
+    const data = snap.val();
+    if (!data) return alert("Sin datos.");
+    let csv = "data:text/csv;charset=utf-8,Fecha,pH,EC,Temp,Humedad\n";
+    Object.keys(data).forEach(k => {
+      const r = data[k];
+      csv += `"${r.timestamp ? new Date(r.timestamp).toLocaleString() : ''}",${r.ph || 0},${r.ec || 0},${r.temperatura || 0},${r.humedad || 0}\n`;
     });
-
-    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    const fileName = `Bitacora_ESH_${new Date().toISOString().split('T')[0]}.csv`;
-    link.setAttribute("download", fileName);
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    link.href = encodeURI(csv);
+    link.download = `Bitacora_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
   });
 }
 
-function cargarHistorialFirebase() {
-  database.ref('historial').limitToLast(30).once('value', (snapshot) => {
-    const registros = snapshot.val();
-    const tbody = document.getElementById('tablaHistorialBody');
-    if (!tbody) return;
-    
-    if (!registros) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 15px;">No hay registros históricos guardados aún.</td></tr>`;
-      return;
-    }
+function purgarBitacoraFirebase() {
+  if (confirm("¿Purgar historial antiguo de Firebase?")) {
+    database.ref('historial').remove().then(() => cargarHistorialFirebase());
+  }
+}
 
-    labelsHora.length = 0;
-    historyData.ph.length = 0;
-    historyData.temperatura.length = 0;
-    historyData.ec.length = 0;
-    historyData.humedad.length = 0;
+function cargarHistorialFirebase() {
+  database.ref('historial').limitToLast(30).once('value', (snap) => {
+    const data = snap.val();
+    const tbody = document.getElementById('tablaHistorialBody');
+    if (!tbody || !data) return;
+    labelsHora.length = 0; Object.keys(historyData).forEach(k => historyData[k].length = 0);
     tbody.innerHTML = '';
 
-    Object.keys(registros).forEach(key => {
-      const reg = registros[key];
-      const fechaLegible = reg.timestamp ? new Date(reg.timestamp).toLocaleString('es-MX') : "Registro automático";
+    Object.keys(data).forEach(k => {
+      const r = data[k];
+      labelsHora.push(r.timestamp ? new Date(r.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '');
+      historyData.ph.push(r.ph || 0); historyData.temperatura.push(r.temperatura || 0);
+      historyData.ec.push(r.ec || 0); historyData.humedad.push(r.humedad || 0);
 
-      labelsHora.push(reg.timestamp ? new Date(reg.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : "Punto");
-      historyData.ph.push(reg.ph || 0);
-      historyData.temperatura.push(reg.temperatura || 0);
-      historyData.ec.push(reg.ec || 0);
-      historyData.humedad.push(reg.humedad || 0);
-
-      const fila = document.createElement('tr');
-      fila.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-      fila.innerHTML = `
-        <td style="padding: 8px; color: var(--text-main);">${fechaLegible}</td>
-        <td style="padding: 8px;">${reg.ph ? reg.ph.toFixed(1) : '--'}</td>
-        <td style="padding: 8px;">${reg.ec ? reg.ec.toFixed(1) : '--'}</td>
-        <td style="padding: 8px;">${reg.temperatura ? reg.temperatura.toFixed(1) : '--'} °C</td>
-        <td style="padding: 8px;">${reg.humedad ? Math.round(reg.humedad) : '--'} %</td>
-      `;
-      tbody.prepend(fila);
+      tbody.prepend(`<tr><td>${r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : ''}</td><td>${r.ph?.toFixed(1)}</td><td>${r.ec?.toFixed(1)}</td><td>${r.temperatura?.toFixed(1)}°C</td></tr>`);
     });
-
     cambiarMetricaGrafica();
   });
 }
 
-function toggleActuador(actuador, estado) {
-  const currentRole = userRole || localStorage.getItem("hidro_role");
-  if (currentRole === 'guest') return;
-  actualizarBotonUI(actuador, estado);
-  database.ref('actuadores/' + actuador).set(estado).catch(() => {
-    actualizarBotonUI(actuador, !estado);
-  });
-}
-
-function verificarAlertas(data) {
-  const ahora = Date.now();
-  if (ahora - ultimaAlertaTiempo < 600000) return; // Limita a 10 mins
-
-  let alertas = [];
-  
-  if (data.temperatura && data.temperatura > 26) {
-    alertas.push(`¡Alerta! Temperatura alta: ${data.temperatura.toFixed(1)}°C.`);
-  } else if (data.temperatura && data.temperatura < 18) {
-    alertas.push(`¡Alerta! Temperatura baja: ${data.temperatura.toFixed(1)}°C.`);
-  }
-
-  if (data.ph && (data.ph < 5.5 || data.ph > 6.5)) {
-    alertas.push(`pH fuera de rango: ${data.ph.toFixed(1)}.`);
-  }
-
-  if (alertas.length > 0 && Notification.permission === "granted") {
-    new Notification("Alerta Huerto ESH", {
-      body: alertas.join("\n"),
-      icon: "https://cdn-icons-png.flaticon.com/512/1892/1892751.png"
-    });
-    ultimaAlertaTiempo = ahora;
-  }
-}
-
+// 3. Diagnóstico ESP32 (RSSI, Uptime, Heap) y Escucha Firebase
 function escucharFirebase() {
-  actualizarEstadoUI("connecting", "Intentando conectar...");
-
-  database.ref('sensores').on('value', (snapshot) => {
-    const data = snapshot.val();
+  database.ref(huertoActivo === 'nft' ? 'sensores' : 'sensores_raices').on('value', (snap) => {
+    const data = snap.val();
     if (data) {
       ultimaVezDatos = Date.now();
-      actualizarEstadoUI("online", "ESP32 Conectado");
+      document.getElementById('statusBadge').className = "status-indicator online";
+      document.getElementById('statusText').innerText = "ESP32 Conectado";
+      
+      document.getElementById('phValue').innerText = data.ph !== undefined ? Number(data.ph).toFixed(1) : '--';
+      document.getElementById('ecValue').innerText = data.ec !== undefined ? Number(data.ec).toFixed(1) : '--';
+      document.getElementById('tempValue').innerText = data.temperatura !== undefined ? Number(data.temperatura).toFixed(1) : '--';
+      document.getElementById('humValue').innerText = data.humedad !== undefined ? Math.round(data.humedad) : '--';
 
-      const phVal = document.getElementById('phValue');
-      const ecVal = document.getElementById('ecValue');
-      const tempVal = document.getElementById('tempValue');
-      const humVal = document.getElementById('humValue');
-
-      if (phVal) phVal.innerText = data.ph !== undefined ? Number(data.ph).toFixed(1) : '--';
-      if (ecVal) ecVal.innerText = data.ec !== undefined ? Number(data.ec).toFixed(1) : '--';
-      if (tempVal) tempVal.innerText = data.temperatura !== undefined ? Number(data.temperatura).toFixed(1) : '--';
-      if (humVal) humVal.innerText = data.humedad !== undefined ? Math.round(data.humedad) : '--';
-
-      if (data.ph && document.getElementById('phBar')) document.getElementById('phBar').style.width = Math.min(100, (data.ph / 14) * 100) + '%';
-      if (data.ec && document.getElementById('ecBar')) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
-      if (data.temperatura && document.getElementById('tempBar')) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
-      if (data.humedad && document.getElementById('humBar')) document.getElementById('humBar').style.width = data.humedad + '%';
-
-      verificarAlertas(data); // LLAMADA A NOTIFICACIONES
-
-      const horaActual = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      labelsHora.push(horaActual);
-      historyData.ph.push(data.ph !== undefined ? Number(data.ph) : 0);
-      historyData.temperatura.push(data.temperatura !== undefined ? Number(data.temperatura) : 0);
-      historyData.ec.push(data.ec !== undefined ? Number(data.ec) : 0);
-      historyData.humedad.push(data.humedad !== undefined ? Number(data.humedad) : 0);
-
-      if (labelsHora.length > 20) {
-        labelsHora.shift();
-        historyData.ph.shift();
-        historyData.temperatura.shift();
-        historyData.ec.shift();
-        historyData.humedad.shift();
-      }
-
-      if (sensorChart) {
-        const chartSelectEl = document.getElementById('chartSelect');
-        const metricKey = chartSelectEl ? chartSelectEl.value : 'ph';
-        sensorChart.data.labels = labelsHora;
-        sensorChart.data.datasets[0].data = historyData[metricKey];
-        sensorChart.update();
-      }
+      if(document.getElementById('phBar')) document.getElementById('phBar').style.width = Math.min(100, (data.ph / 14) * 100) + '%';
+      if(document.getElementById('ecBar')) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
+      if(document.getElementById('tempBar')) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
+      if(document.getElementById('humBar')) document.getElementById('humBar').style.width = (data.humedad || 0) + '%';
     }
   });
 
-  if (intervaloVerificacion) clearInterval(intervaloVerificacion);
-  intervaloVerificacion = setInterval(() => {
-    const appContainer = document.getElementById('appContainer');
-    if (appContainer && !appContainer.classList.contains('hidden')) {
-      const tiempoTranscurrido = Date.now() - ultimaVezDatos;
-      if (tiempoTranscurrido > 10000 && tiempoTranscurrido < 30000) {
-        actualizarEstadoUI("connecting", "Reconectando...");
-      } else if (tiempoTranscurrido >= 30000) {
-        marcarEsp32Desconectado();
-      }
+  // Escuchar nodo de diagnóstico del ESP32
+  database.ref('diagnostico').on('value', (snap) => {
+    const diag = snap.val();
+    if (diag) {
+      document.getElementById('diagRssi').innerText = (diag.rssi || -65) + " dBm";
+      document.getElementById('diagUptime').innerText = Math.round((diag.uptime || 0) / 60) + " min";
+      document.getElementById('diagHeap').innerText = Math.round((diag.heap || 150000) / 1024) + " KB";
     }
-  }, 3000);
+  });
 
-  database.ref('actuadores').on('value', (snapshot) => {
-    const act = snapshot.val();
+  database.ref(huertoActivo === 'nft' ? 'actuadores' : 'actuadores_raices').on('value', (snap) => {
+    const act = snap.val();
     if (act) {
       actualizarBotonUI('bomba_principal', act.bomba_principal);
       actualizarBotonUI('bomba_muestreo', act.bomba_muestreo);
@@ -470,200 +260,132 @@ function escucharFirebase() {
     }
   });
 
-  database.ref('trackers').on('value', (snapshot) => {
+  database.ref('trackers').on('value', (snap) => {
     const container = document.getElementById('tracker-container');
-    if (!container) return;
-    container.innerHTML = ''; 
-    const trackers = snapshot.val();
-    if (trackers) {
-      Object.keys(trackers).forEach(key => {
-        const item = trackers[key];
-        renderTrackerItem(key, item.title, item.startDay, item.startDate, item.startTime);
-      });
-    }
+    if (!container) return; container.innerHTML = '';
+    const trackers = snap.val();
+    if (trackers) Object.keys(trackers).forEach(k => renderTrackerItem(k, trackers[k]));
   });
 
-  database.ref('tasks').on('value', (snapshot) => {
+  database.ref('tasks').on('value', (snap) => {
     const container = document.getElementById('task-container');
-    if (!container) return;
-    container.innerHTML = ''; 
-    const tasks = snapshot.val();
-    if (tasks) {
-      Object.keys(tasks).forEach(key => {
-        const task = tasks[key];
-        renderTaskItem(key, task.text, task.completed);
-      });
-    }
+    if (!container) return; container.innerHTML = '';
+    const tasks = snap.val();
+    if (tasks) Object.keys(tasks).forEach(k => renderTaskItem(k, tasks[k]));
   });
 }
 
-function actualizarEstadoUI(estado, mensaje) {
-  const badge = document.getElementById('statusBadge');
-  const text = document.getElementById('statusText');
-  const banner = document.getElementById('systemBanner');
-
-  if (estado === "online") {
-    if (badge) {
-      badge.className = "status-indicator online";
-      badge.style.background = ""; 
-    }
-    if (text) text.innerText = mensaje;
-    if (banner) {
-      banner.className = "status-banner banner-online";
-      banner.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Enlace exitoso: Sistema funcionando correctamente</span>`;
-    }
-  } else if (estado === "connecting") {
-    if (badge) {
-      badge.className = "status-indicator connecting";
-      badge.style.background = ""; 
-    }
-    if (text) text.innerText = mensaje;
-    if (banner) {
-      banner.className = "status-banner banner-connecting";
-      banner.innerHTML = `<i class="fa-solid fa-satellite-dish pulse-icon"></i> <span>Esperando conexión o intentando reconectar...</span>`;
-    }
-  }
-}
-
-function marcarEsp32Desconectado() {
-  const badge = document.getElementById('statusBadge');
-  const text = document.getElementById('statusText');
-  const banner = document.getElementById('systemBanner');
-  
-  if (badge) {
-    badge.className = "status-indicator offline";
-    badge.style.background = ""; 
-  }
-  if (text) text.innerText = "ESP32 Desconectado";
-  if (banner) {
-    banner.className = "status-banner banner-offline";
-    banner.innerHTML = `
-      <i class="fa-solid fa-triangle-exclamation"></i>
-      <span>Aviso: El ESP32 no está respondiendo (Sin señal)</span>
-    `;
-  }
+function toggleActuador(act, estado) {
+  if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
+  actualizarBotonUI(act, estado);
+  database.ref(`${huertoActivo === 'nft' ? 'actuadores' : 'actuadores_raices'}/${act}`).set(estado);
 }
 
 function actualizarBotonUI(id, estado) {
   const btn = document.getElementById('btn-' + id);
   if (btn) btn.checked = Boolean(estado);
-
-  let itemEl = document.getElementById('item-' + id);
-  let statusEl = null;
-  if (id === 'bomba_principal') statusEl = document.getElementById('statusBombaPrincipal');
-  if (id === 'bomba_muestreo') statusEl = document.getElementById('statusBomba2');
-  if (id === 'peltier') statusEl = document.getElementById('statusPeltier');
-
+  const statusEl = document.getElementById(id === 'bomba_principal' ? 'statusBombaPrincipal' : id === 'bomba_muestreo' ? 'statusBomba2' : 'statusPeltier');
   if (statusEl) {
-    if (estado) {
-      statusEl.innerHTML = `<span class="status-dot" style="background: var(--green-bright); box-shadow: 0 0 10px var(--green-bright);"></span> ENCENDIDA`;
-      statusEl.style.color = "var(--green-bright)";
-      if (itemEl) itemEl.classList.add('active-glow');
-    } else {
-      statusEl.innerHTML = `<span class="status-dot"></span> APAGADA`;
-      statusEl.style.color = "";
-      if (itemEl) itemEl.classList.remove('active-glow');
-    }
+    statusEl.innerHTML = `<span class="status-dot" style="background:${estado ? 'var(--green-bright)' : ''}"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
   }
 }
 
-function addTracker() {
-  const nameInput = document.getElementById('tracker-input');
-  const dateInput = document.getElementById('tracker-date-input');
-  const timeInput = document.getElementById('tracker-time-input');
-  const dayInput = document.getElementById('tracker-day-input');
-
-  if (!nameInput) return;
-  const name = nameInput.value.trim();
-  if (!name) return;
-
-  const fechaHoy = new Date().toISOString().split('T')[0];
-
-  database.ref('trackers').push({
-    title: name,
-    startDate: (dateInput && dateInput.value) ? dateInput.value : fechaHoy,
-    startTime: (timeInput && timeInput.value) ? timeInput.value : "08:00",
-    startDay: parseInt(dayInput && dayInput.value ? dayInput.value : 1) || 1
-  });
-
-  nameInput.value = '';
-  if (dayInput) dayInput.value = '';
-  if (dateInput) dateInput.value = '';
-  if (timeInput) timeInput.value = '';
+// 4. Calibración & Registro de Insumos
+function registrarCalibracion() {
+  const hoy = new Date().toLocaleDateString();
+  database.ref('mantenimiento/calibracion').set(hoy);
+  alert("Fecha de calibración actualizada con éxito.");
 }
 
-function renderTrackerItem(key, title, startDay, startDateStr, startTimeStr) {
-  const fechaValida = startDateStr || new Date().toISOString().split('T')[0];
-  const horaValida = startTimeStr || "00:00";
-  const fechaInicioStr = `${fechaValida}T${horaValida}:00`;
-  
-  const diffDays = Math.floor(Math.max(0, new Date() - new Date(fechaInicioStr)) / (1000 * 60 * 60 * 24));
-  let currentDay = Math.min(30, Math.max(1, (startDay || 1) + diffDays));
-  const percentage = Math.min(100, Math.max(0, (currentDay / 30) * 100));
+function cargarMantenimientoFirebase() {
+  database.ref('mantenimiento').on('value', (snap) => {
+    const m = snap.val();
+    if (m && m.calibracion) document.getElementById('txtCalibDate').innerText = m.calibracion;
+  });
+}
 
+// 6. Programador de Horarios en la Nube
+function guardarProgramacion() {
+  const act = document.getElementById('schedActuator').value;
+  const on = document.getElementById('schedTimeOn').value;
+  const off = document.getElementById('schedTimeOff').value;
+  database.ref(`schedules/${act}`).set({ on, off });
+  alert("Regla horaria guardada en Firebase.");
+}
+
+// 5. Trackers con Notas de Campo
+function addTracker() {
+  const title = document.getElementById('tracker-input').value.trim();
+  if (!title) return;
+  database.ref('trackers').push({
+    title,
+    startDate: document.getElementById('tracker-date-input').value || new Date().toISOString().split('T')[0],
+    totalDays: parseInt(document.getElementById('tracker-days-total').value) || 30,
+    stages: [{name: "Germinación", completed:false}, {name: "Agua", completed:false}, {name: "Solución", completed:false}],
+    notes: []
+  });
+  document.getElementById('tracker-input').value = '';
+}
+
+function guardarNotaTracker(key, noteText) {
+  if (!noteText.trim()) return;
+  database.ref(`trackers/${key}/notes`).push({ text: noteText, time: new Date().toLocaleTimeString() });
+}
+
+function renderTrackerItem(key, item) {
   const container = document.getElementById('tracker-container');
   if (!container) return;
+  const isAdmin = (userRole || localStorage.getItem("hidro_role")) === 'admin';
   
-  const newTracker = document.createElement('div');
-  newTracker.className = 'tracker-item';
-  const isAdmin = ((userRole || localStorage.getItem("hidro_role")) === 'admin');
+  let stagesHTML = '';
+  if (item.stages) {
+    item.stages.forEach((s, idx) => {
+      stagesHTML += `<div class="tracker-stage-box ${s.completed ? 'completed-check' : ''}" onclick="database.ref('trackers/${key}/stages/${idx}/completed').set(!${s.completed})">${s.name}</div>`;
+    });
+  }
 
-  newTracker.innerHTML = `
+  let notesHTML = '';
+  if (item.notes) {
+    Object.values(item.notes).forEach(n => { notesHTML += `<div>• [${n.time}] ${n.text}</div>`; });
+  }
+
+  const div = document.createElement('div');
+  div.className = 'tracker-item';
+  div.innerHTML = `
     <div class="tracker-header">
-        <span class="tracker-title">${title}</span>
-        <div class="tracker-actions">
-            <span class="tracker-days">Día ${currentDay} / 30</span>
-            ${isAdmin ? `<button class="tracker-delete" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>` : ''}
-        </div>
+      <span class="tracker-title">${item.title}</span>
+      <div class="tracker-actions">
+        <span class="tracker-days">${item.totalDays} Días</span>
+        ${isAdmin ? `<button class="tracker-delete" onclick="database.ref('trackers/${key}').remove()"><i class="fa-solid fa-xmark"></i></button>` : ''}
+      </div>
     </div>
-    <div class="tracker-visual-bar">
-        <div class="fase-agua">Fase 1: Agua</div>
-        <div class="fase-nutri">Fase 2: Solución 50%</div>
-        <div class="tracker-cursor" style="left: ${percentage}%;"></div>
-    </div>
-    <div class="tracker-dates">
-        <span>Inicio: ${fechaValida} (${horaValida})</span>
-        <span>Cambio: +15d</span>
-        <span>Cosecha: +30d</span>
+    <div class="tracker-stages-container">${stagesHTML}</div>
+    <div class="tracker-notes-section">
+      <span>Notas de campo:</span>
+      <div class="tracker-notes-list">${notesHTML || 'Sin notas registradas.'}</div>
+      ${isAdmin ? `<input type="text" class="tracker-notes-input" placeholder="Añadir nota rápida..." onkeydown="if(event.key==='Enter'){guardarNotaTracker('${key}', this.value); this.value='';}">` : ''}
     </div>
   `;
-
-  if (isAdmin) {
-    newTracker.querySelector('.tracker-delete')?.addEventListener('click', () => database.ref('trackers/' + key).remove());
-  }
-  container.appendChild(newTracker);
+  container.appendChild(div);
 }
 
 function addTask() {
-  const input = document.getElementById('task-input');
-  if (!input || !input.value.trim()) return;
-  database.ref('tasks').push({ text: input.value.trim(), completed: false });
-  input.value = '';
+  const text = document.getElementById('task-input').value.trim();
+  if (!text) return;
+  database.ref('tasks').push({ text, completed: false });
+  document.getElementById('task-input').value = '';
 }
 
-function renderTaskItem(key, text, completed) {
+function renderTaskItem(key, task) {
   const container = document.getElementById('task-container');
   if (!container) return;
-  const newTask = document.createElement('div');
-  newTask.className = `task-item ${completed ? 'completed' : ''}`;
-  const isAdmin = ((userRole || localStorage.getItem("hidro_role")) === 'admin');
-
-  newTask.innerHTML = `
-      <div class="task-checkbox"><i class="fa-solid fa-check"></i></div>
-      <span class="task-text">${text}</span>
-      ${isAdmin ? `<button class="task-delete" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>` : ''}
+  const isAdmin = (userRole || localStorage.getItem("hidro_role")) === 'admin';
+  const div = document.createElement('div');
+  div.className = `task-item ${task.completed ? 'completed' : ''}`;
+  div.innerHTML = `
+    <div class="task-checkbox" onclick="database.ref('tasks/${key}/completed').set(!${task.completed})"><i class="fa-solid fa-check"></i></div>
+    <span class="task-text">${task.text}</span>
+    ${isAdmin ? `<button class="task-delete" onclick="database.ref('tasks/${key}').remove()"><i class="fa-solid fa-xmark"></i></button>` : ''}
   `;
-  
-  newTask.addEventListener('click', (e) => {
-      if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
-      if (!e.target.closest('.task-delete')) database.ref('tasks/' + key + '/completed').set(!completed);
-  });
-
-  if (isAdmin) {
-    newTask.querySelector('.task-delete')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        database.ref('tasks/' + key).remove();
-    });
-  }
-  container.appendChild(newTask);
+  container.appendChild(div);
 }
