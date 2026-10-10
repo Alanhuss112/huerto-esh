@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Huerto Hidropónico | ESH - IoT Pro</title>
+  <title>Huerto Hidropónico | ESH </title>
   
-  <!-- Configuración PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#030d0a">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/192/1892/1892751.png">
@@ -23,75 +22,70 @@
   <div class="ambient-glow orb-2"></div>
   <div class="ambient-glow orb-3"></div>
 
-  <!-- LOGIN OVERLAY REDISEÑADO -->
+  <!-- LOGIN OVERLAY HEXAGONAL GLASS -->
   <div id="loginOverlay" class="login-overlay">
-    <div class="login-card hyde-card" id="loginCard">
-      <div class="login-badge"><i class="fa-solid fa-shield-halved"></i> ESH IoT Pro</div>
-      
-      <div class="login-header-glow">
-        <div class="login-brand-icon"><i class="fa-solid fa-seedling"></i></div>
-        <h2>Acceso al Sistema</h2>
-        <p class="login-subtitle">Seleccione su perfil operativo autorizado</p>
-      </div>
-      
-      <div class="hyde-users-grid" id="hydeUsersGrid">
-        <div class="hyde-user-pill" onclick="seleccionarPerfil('H.A.G.D.R.')">
-          <div class="hyde-avatar-container admin-avatar">
-            <i class="fa-solid fa-user-shield"></i>
-          </div>
-          <div class="hyde-user-info">
-            <span class="hyde-username">H.A.G.D.R.</span>
-            <span class="hyde-user-role">Administrador Maestro</span>
-          </div>
-          <div class="hyde-arrow-badge"><i class="fa-solid fa-arrow-right"></i></div>
-        </div>
-
-        <div class="hyde-user-pill" onclick="seleccionarPerfil('Hidrouser')">
-          <div class="hyde-avatar-container guest-avatar">
-            <i class="fa-solid fa-binoculars"></i>
-          </div>
-          <div class="hyde-user-info">
-            <span class="hyde-username">Hidrouser</span>
-            <span class="hyde-user-role">Monitoreo y Campo</span>
-          </div>
-          <div class="hyde-arrow-badge"><i class="fa-solid fa-arrow-right"></i></div>
-        </div>
+    <div class="login-hex-card" id="loginCard">
+      <div class="hex-avatar-badge">
+        <div class="hex-avatar-inner" id="hexAvatarIcon"><i class="fa-solid fa-user-gear"></i></div>
       </div>
 
-      <form id="loginForm" class="hyde-form hidden" onsubmit="event.preventDefault(); autenticar();">
-        <div class="hyde-selected-banner">
-          <div class="hyde-mini-avatar" id="hydeMiniAvatarIcon"><i class="fa-solid fa-user"></i></div>
-          <div class="hyde-selected-text">
+      <div class="hex-card-content">
+        <span class="hex-badge-label"><i class="fa-solid fa-leaf"></i>IoT</span>
+        <h2>Sign In</h2>
+        <p class="login-subtitle">Seleccione su perfil de acceso</p>
+
+        <div class="hyde-users-grid" id="hydeUsersGrid">
+          <div class="hex-user-btn" onclick="seleccionarPerfil('H.A.G.D.R.')">
+            <div class="user-pill-icon admin-icon"><i class="fa-solid fa-user-shield"></i></div>
+            <div class="user-pill-text">
+              <strong>H.A.G.D.R.</strong>
+              <small>Administrador</small>
+            </div>
+            <i class="fa-solid fa-chevron-right pill-arrow"></i>
+          </div>
+
+          <div class="hex-user-btn" onclick="seleccionarPerfil('Hidrouser')">
+            <div class="user-pill-icon guest-icon"><i class="fa-solid fa-binoculars"></i></div>
+            <div class="user-pill-text">
+              <strong>Hidrouser</strong>
+              <small>Monitor</small>
+            </div>
+            <i class="fa-solid fa-chevron-right pill-arrow"></i>
+          </div>
+        </div>
+
+        <form id="loginForm" class="hex-form hidden" onsubmit="event.preventDefault(); autenticar();">
+          <div class="selected-user-pill">
             <span id="selectedUserLabel">Usuario</span>
-            <a href="#" onclick="regresarSeleccionUsuarios(); return false;" class="hyde-change-user"><i class="fa-solid fa-rotate-left"></i> Cambiar cuenta</a>
+            <a href="#" onclick="regresarSeleccionUsuarios(); return false;"><i class="fa-solid fa-rotate-left"></i> Cambiar</a>
           </div>
-        </div>
 
-        <input type="hidden" id="userInput">
+          <input type="hidden" id="userInput">
 
-        <div class="input-group">
-          <i class="fa-solid fa-key input-icon"></i>
-          <input type="password" id="passInput" placeholder="Contraseña de acceso" required autocomplete="current-password">
-          <i class="fa-solid fa-eye toggle-password" id="togglePassword" onclick="toggleMostrarPass()"></i>
-        </div>
+          <div class="hex-input-box">
+            <i class="fa-solid fa-lock hex-input-icon"></i>
+            <input type="password" id="passInput" placeholder="Contraseña de sesión" required autocomplete="current-password">
+            <i class="fa-solid fa-eye toggle-password" id="togglePassword" onclick="toggleMostrarPass()"></i>
+          </div>
 
-        <div id="loginErrorMsg" class="login-error-msg hidden">
-          <i class="fa-solid fa-circle-exclamation"></i> Contraseña incorrecta
-        </div>
+          <div id="loginErrorMsg" class="login-error-msg hidden">
+            <i class="fa-solid fa-circle-exclamation"></i> Contraseña incorrecta
+          </div>
 
-        <div class="login-options">
-          <label class="remember-me">
-            <input type="checkbox" id="rememberMe">
-            <span class="custom-checkbox"></span>
-            <span>Recordar sesión en este equipo</span>
-          </label>
-        </div>
+          <div class="login-options">
+            <label class="remember-me">
+              <input type="checkbox" id="rememberMe">
+              <span class="custom-checkbox"></span>
+              <span>Recordar sesión</span>
+            </label>
+          </div>
 
-        <button type="submit" class="btn-login" id="btnLogin">
-          <span>INICIAR ENTORNO SEGURO</span>
-          <i class="fa-solid fa-arrow-right-long"></i>
-        </button>
-      </form>
+          <button type="submit" class="btn-hex-submit" id="btnLogin">
+            <span>LOGIN</span>
+            <i class="fa-solid fa-arrow-right-long"></i>
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -112,12 +106,14 @@
           <i class="fa-regular fa-clock"></i>
           <span id="liveClock">00:00:00</span>
         </div>
-        <!-- Selector de Temas -->
         <select id="themeSelector" class="select-metric" onchange="cambiarTemaVisual(this.value)" title="Tema visual">
           <option value="theme-emerald">Esmeralda ESH</option>
           <option value="theme-cyberpunk">Modo Neón</option>
           <option value="theme-light">Modo Diurno</option>
         </select>
+        <button class="btn-install" id="btnNotify" onclick="solicitarNotificaciones()" title="Activar Notificaciones">
+          <i class="fa-solid fa-bell"></i> Notificaciones
+        </button>
         <button class="btn-install hidden" id="btnInstallApp" title="Instalar App">
           <i class="fa-solid fa-download"></i> App
         </button>
@@ -129,11 +125,11 @@
 
     <!-- SELECTOR DE HUERTO -->
     <div class="huerto-selector-bar">
-      <button class="huerto-tab active" onclick="cambiarHuerto('nft', this)">
-        <i class="fa-solid fa-water"></i> Huerto NFT Principal
+      <button class="huerto-tab active" id="tab-nft" onclick="cambiarHuerto('nft')">
+        <i class="fa-solid fa-water"></i> NFT Principal
       </button>
-      <button class="huerto-tab" onclick="cambiarHuerto('raices', this)">
-        <i class="fa-solid fa-seedling"></i> Huerto Raíces Flotantes
+      <button class="huerto-tab" id="tab-raices" onclick="cambiarHuerto('raices')">
+        <i class="fa-solid fa-seedling"></i> Raíces Flotantes
       </button>
     </div>
 
@@ -142,7 +138,7 @@
         <h2><i class="fa-solid fa-satellite-dish pulse-icon"></i> Monitoreo en Tiempo Real (<span id="currentHuertoTitle">Huerto NFT Principal</span>)</h2>
       </div>
 
-      <!-- TARJETAS DE SENSORES -->
+      <!-- SENSORES -->
       <div class="sensors-grid">
         <div class="card metric-card card-ph">
           <div class="card-header"><span>pH del Agua</span><i class="fa-solid fa-flask icon-ph"></i></div>
@@ -185,10 +181,10 @@
 
       <div class="status-banner" id="systemBanner">
         <i class="fa-solid fa-satellite-dish pulse-icon"></i>
-        <span>Sincronizando telemetría con Firebase...</span>
+        <span>Conectando con Firebase...</span>
       </div>
 
-      <!-- GRÁFICA & ESTADÍSTICAS AVANZADAS -->
+      <!-- GRÁFICA & ESTADÍSTICAS -->
       <div class="card chart-card">
         <div class="chart-header">
           <h3 id="chartTitle"><i class="fa-solid fa-chart-line"></i> Historial y Analítica Avanzada</h3>
@@ -199,9 +195,7 @@
             <option value="humedad">Humedad (%)</option>
           </select>
         </div>
-        <div class="chart-container">
-          <canvas id="sensorChart"></canvas>
-        </div>
+        <div class="chart-container"><canvas id="sensorChart"></canvas></div>
         <div class="stats-summary-bar">
           <div class="stat-box"><span>Mínimo (24h)</span><strong id="statMin">--</strong></div>
           <div class="stat-box"><span>Promedio</span><strong id="statAvg">--</strong></div>
@@ -235,24 +229,21 @@
         </div>
 
         <div class="card">
-          <div class="chart-header">
-            <h3><i class="fa-solid fa-flask-vial"></i> Calibración & Insumos</h3>
-          </div>
+          <div class="chart-header"><h3><i class="fa-solid fa-flask-vial"></i> Calibración & Insumos</h3></div>
           <div style="font-size: 0.88rem; display: flex; flex-direction: column; gap: 12px; color: var(--text-muted);">
             <div>Última Calibración Sondas: <strong id="txtCalibDate" style="color: var(--text-main);">01/10/2026</strong></div>
             <div>Insumos añadidos hoy: <strong id="txtInsumos" style="color: var(--text-main);">15 ml pH Down / 50 ml A+B</strong></div>
-            <div class="admin-only" style="display: flex; gap: 10px; margin-top: 5px;">
+            <div class="admin-only" style="margin-top: 5px;">
               <button class="btn-add" onclick="registrarCalibracion()" style="padding: 8px 12px; font-size: 0.8rem;">Registrar Calibración Hoy</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- PANEL DE CONTROL & SCHEDULER (DINÁMICO SEGÚN HUERO ACTIVO) -->
+      <!-- PANEL DE CONTROL -->
       <div class="card control-card" style="margin-bottom: 25px;">
         <h3><i class="fa-solid fa-microchip"></i> Panel de Control de Actuadores (<span id="panelActuadoresTitle">Huerto NFT</span>)</h3>
         
-        <!-- Actuadores NFT Principal -->
         <div class="control-grid" id="gridActuadoresNft">
           <div class="control-item" id="item-bomba_principal">
             <div class="actuator-info">
@@ -279,7 +270,6 @@
           </div>
         </div>
 
-        <!-- Actuadores Raíces Flotantes (Solo Peltier y Bomba de Aire) -->
         <div class="control-grid hidden" id="gridActuadoresRaices">
           <div class="control-item" id="item-raices_peltier">
             <div class="actuator-info">
@@ -298,7 +288,6 @@
           </div>
         </div>
 
-        <!-- Programador de Horarios -->
         <div class="scheduler-box admin-only" style="margin-top: 20px; border-top: 1px solid var(--card-border); padding-top: 15px;">
           <h4 style="font-size: 0.95rem; margin-bottom: 10px; color: var(--green-bright);"><i class="fa-solid fa-clock"></i> Programador Horario Automático (Cloud Scheduler)</h4>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -310,18 +299,17 @@
         </div>
       </div>
 
-      <!-- TRACKERS CON ETAPAS PERSONALIZABLES & CHECKLIST -->
+      <!-- TRACKERS CON CICLO AUTOMÁTICO (7d Agua, 7d Solución 50%, Resto 100%) -->
       <div class="bottom-grid">
         <div class="card tracker-card">
-          <h3><i class="fa-solid fa-leaf"></i> Tracker de Cultivo & Notas de Campo</h3>
-          <p class="card-subtitle">Personaliza tus etapas separadas por comas (3 o 4).</p>
+          <h3><i class="fa-solid fa-leaf"></i> Tracker de Cultivo (Fases Proporcionales)</h3>
+          <p class="card-subtitle">7 días Agua | 7 días Sol. 50% | Resto Sol. 100%</p>
           
           <div class="tracker-inputs-form admin-only">
             <input type="text" id="tracker-input" placeholder="Nombre del Lote (ej. Lote Lechuga 1)...">
-            <input type="text" id="tracker-stages-input" placeholder="Etapas (ej: Germinación, Agua, Solución, Cosecha)" value="Germinación, Agua Pura, Solución 50%, Cosecha">
             <div class="tracker-inputs-row">
               <input type="date" id="tracker-date-input" title="Fecha de inicio">
-              <input type="number" id="tracker-day-input" min="1" max="60" placeholder="Día (ej. 1)" value="1">
+              <input type="number" id="tracker-days-total" min="15" max="90" placeholder="Total Días" value="30" title="Duración total del ciclo">
               <button class="btn-add" onclick="addTracker()"><i class="fa-solid fa-plus"></i></button>
             </div>
           </div>
@@ -330,7 +318,7 @@
 
         <div class="card checklist-card">
           <h3><i class="fa-solid fa-list-check"></i> Checklist Operativo ESH</h3>
-          <p class="card-subtitle">Protocolos de mantenimiento.</p>
+          <p class="card-subtitle">Gestión de tareas del huerto.</p>
           <div class="input-group-add admin-only">
             <input type="text" id="task-input" placeholder="Ej: Revisar nivel de nutrientes...">
             <button class="btn-add" onclick="addTask()"><i class="fa-solid fa-plus"></i></button>
@@ -340,7 +328,7 @@
       </div>
     </main>
 
-    <footer>Huerto Inteligente · Escuela Superior de Huejutla · UAEH · 2026</footer>
+    <footer>Huerto Inteligente · Escuela Superior de Huejutla · UAEH</footer>
   </div>
 
   <script src="script.js"></script>

@@ -34,8 +34,10 @@ const historyData = { ph: [], temperatura: [], ec: [], humedad: [] };
 const labelsHora = [];
 let userRole = null; 
 let huertoActivo = 'nft';
-let ultimaVezDatos = Date.now();
+let ultimaVezDatos = 0;
 let intervaloVerificacion = null;
+let refSensoresActual = null;
+let refActuadoresActual = null;
 
 const configMap = {
   ph: { label: 'pH', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
@@ -67,11 +69,13 @@ function cambiarTemaVisual(themeName, guardar = true) {
   if (guardar) localStorage.setItem("hidro_theme", themeName);
 }
 
-function cambiarHuerto(tipo, btnElement) {
+function cambiarHuerto(tipo) {
+  if (huertoActivo === tipo) return;
   huertoActivo = tipo;
-  document.querySelectorAll('.huerto-tab').forEach(t => t.classList.remove('active'));
-  btnElement.classList.add('active');
-  
+
+  document.getElementById('tab-nft').classList.toggle('active', tipo === 'nft');
+  document.getElementById('tab-raices').classList.toggle('active', tipo === 'raices');
+
   const titleEl = document.getElementById('currentHuertoTitle');
   const panelTitle = document.getElementById('panelActuadoresTitle');
   const gridNft = document.getElementById('gridActuadoresNft');
@@ -88,7 +92,19 @@ function cambiarHuerto(tipo, btnElement) {
     gridNft.classList.add('hidden');
     gridRaices.classList.remove('hidden');
   }
+
+  marcarDesconectado();
   escucharFirebase();
+}
+
+function marcarDesconectado() {
+  ultimaVezDatos = 0;
+  document.getElementById('statusBadge').className = "status-indicator offline";
+  document.getElementById('statusText').innerText = "ESP32 Desconectado";
+  document.getElementById('phValue').innerText = '--';
+  document.getElementById('ecValue').innerText = '--';
+  document.getElementById('tempValue').innerText = '--';
+  document.getElementById('humValue').innerText = '--';
 }
 
 function toggleMostrarPass() {
@@ -102,7 +118,7 @@ function toggleMostrarPass() {
 function seleccionarPerfil(user) {
   document.getElementById('userInput').value = user;
   document.getElementById('selectedUserLabel').innerText = user;
-  document.getElementById('hydeMiniAvatarIcon').innerHTML = (user === 'H.A.G.D.R.') ? '<i class="fa-solid fa-user-shield"></i>' : '<i class="fa-solid fa-seedling"></i>';
+  document.getElementById('hexAvatarIcon').innerHTML = (user === 'H.A.G.D.R.') ? '<i class="fa-solid fa-user-shield"></i>' : '<i class="fa-solid fa-binoculars"></i>';
   document.getElementById('hydeUsersGrid').classList.add('hidden');
   document.getElementById('loginForm').classList.remove('hidden');
   document.getElementById('passInput').focus();
@@ -217,29 +233,22 @@ function cargarHistorialFirebase() {
     const data = snap.val();
     const tbody = document.getElementById('tablaHistorialBody');
     if (!tbody) return;
-    
-    if (!data) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 10px;">No hay registros históricos.</td></tr>`;
-      return;
-    }
+    if (!data) { tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 10px;">Sin registros.</td></tr>`; return; }
 
     labelsHora.length = 0; Object.keys(historyData).forEach(k => historyData[k].length = 0);
     tbody.innerHTML = '';
 
     Object.keys(data).forEach(k => {
       const r = data[k];
-      const fechaLegible = r.timestamp ? new Date(r.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : "Automático";
-
+      const fechaLegible = r.timestamp ? new Date(r.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : "Auto";
       labelsHora.push(fechaLegible);
-      historyData.ph.push(r.ph || 0);
-      historyData.temperatura.push(r.temperatura || 0);
-      historyData.ec.push(r.ec || 0);
-      historyData.humedad.push(r.humedad || 0);
+      historyData.ph.push(r.ph || 0); historyData.temperatura.push(r.temperatura || 0);
+      historyData.ec.push(r.ec || 0); historyData.humedad.push(r.humedad || 0);
 
       const fila = document.createElement('tr');
       fila.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
       fila.innerHTML = `
-        <td style="padding: 8px; color: var(--text-main);">${fechaLegible}</td>
+        <td style="padding: 8px;">${fechaLegible}</td>
         <td style="padding: 8px;">${r.ph !== undefined ? r.ph.toFixed(1) : '--'}</td>
         <td style="padding: 8px;">${r.ec !== undefined ? r.ec.toFixed(1) : '--'}</td>
         <td style="padding: 8px;">${r.temperatura !== undefined ? r.temperatura.toFixed(1) : '--'} °C</td>
@@ -252,14 +261,19 @@ function cargarHistorialFirebase() {
 }
 
 function escucharFirebase() {
+  if (refSensoresActual) refSensoresActual.off();
+  if (refActuadoresActual) refActuadoresActual.off();
+
   const nodoSensores = huertoActivo === 'nft' ? 'sensores' : 'sensores_raices';
-  database.ref(nodoSensores).on('value', (snap) => {
+  refSensoresActual = database.ref(nodoSensores);
+
+  refSensoresActual.on('value', (snap) => {
     const data = snap.val();
-    if (data) {
+    if (data && data.timestamp && (Date.now() - data.timestamp < 15000)) {
       ultimaVezDatos = Date.now();
       document.getElementById('statusBadge').className = "status-indicator online";
       document.getElementById('statusText').innerText = "ESP32 Conectado";
-      
+
       document.getElementById('phValue').innerText = data.ph !== undefined ? Number(data.ph).toFixed(1) : '--';
       document.getElementById('ecValue').innerText = data.ec !== undefined ? Number(data.ec).toFixed(1) : '--';
       document.getElementById('tempValue').innerText = data.temperatura !== undefined ? Number(data.temperatura).toFixed(1) : '--';
@@ -269,29 +283,22 @@ function escucharFirebase() {
       if(document.getElementById('ecBar')) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
       if(document.getElementById('tempBar')) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
       if(document.getElementById('humBar')) document.getElementById('humBar').style.width = (data.humedad || 0) + '%';
+
+      evaluarAlertas(data);
+    } else {
+      marcarDesconectado();
     }
   });
 
   if (intervaloVerificacion) clearInterval(intervaloVerificacion);
   intervaloVerificacion = setInterval(() => {
-    const transcurrido = Date.now() - ultimaVezDatos;
-    if (transcurrido > 15000) {
-      document.getElementById('statusBadge').className = "status-indicator offline";
-      document.getElementById('statusText').innerText = "ESP32 Desconectado";
-    }
-  }, 3000);
-
-  database.ref('diagnostico').on('value', (snap) => {
-    const diag = snap.val();
-    if (diag) {
-      document.getElementById('diagRssi').innerText = (diag.rssi || -65) + " dBm";
-      document.getElementById('diagUptime').innerText = Math.round((diag.uptime || 0) / 60) + " min";
-      document.getElementById('diagHeap').innerText = Math.round((diag.heap || 150000) / 1024) + " KB";
-    }
-  });
+    if (Date.now() - ultimaVezDatos > 15000) marcarDesconectado();
+  }, 4000);
 
   const nodoActuadores = huertoActivo === 'nft' ? 'actuadores' : 'actuadores_raices';
-  database.ref(nodoActuadores).on('value', (snap) => {
+  refActuadoresActual = database.ref(nodoActuadores);
+
+  refActuadoresActual.on('value', (snap) => {
     const act = snap.val();
     if (act) {
       if (huertoActivo === 'nft') {
@@ -323,12 +330,11 @@ function escucharFirebase() {
 function toggleActuador(act, estado) {
   if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
   actualizarBotonUI(act, estado);
-  
   if (huertoActivo === 'nft') {
     database.ref(`actuadores/${act}`).set(estado);
   } else {
-    let firebaseKey = act === 'raices_peltier' ? 'peltier' : 'bomba_aire';
-    database.ref(`actuadores_raices/${firebaseKey}`).set(estado);
+    let key = act === 'raices_peltier' ? 'peltier' : 'bomba_aire';
+    database.ref(`actuadores_raices/${key}`).set(estado);
   }
 }
 
@@ -348,7 +354,7 @@ function actualizarBotonUI(id, estado) {
 function registrarCalibracion() {
   const hoy = new Date().toLocaleDateString();
   database.ref('mantenimiento/calibracion').set(hoy);
-  alert("Fecha de calibración actualizada con éxito.");
+  alert("Fecha de calibración registrada.");
 }
 
 function cargarMantenimientoFirebase() {
@@ -363,29 +369,42 @@ function guardarProgramacion() {
   const on = document.getElementById('schedTimeOn').value;
   const off = document.getElementById('schedTimeOff').value;
   database.ref(`schedules/${act}`).set({ on, off });
-  alert("Regla horaria guardada en Firebase.");
+  alert("Regla guardada.");
 }
 
-// TRACKERS CON ETAPAS PERSONALIZADAS MANUALMENTE
+function solicitarNotificaciones() {
+  if ('Notification' in window) {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') alert("¡Notificaciones de alerta activadas con éxito!");
+      else alert("Permiso de notificaciones denegado.");
+    });
+  }
+}
+
+function evaluarAlertas(d) {
+  if (Notification.permission === 'granted') {
+    if (d.ph < 5.0 || d.ph > 7.0) {
+      new Notification("⚠️ Alerta de pH fuera de rango", { body: `El valor actual de pH es ${d.ph.toFixed(1)}.` });
+    }
+  }
+}
+
+// TRACKER CON REGLA EXACTA: 7d Agua, 7d Solución 50%, Resto Solución 100%
 function addTracker() {
   const title = document.getElementById('tracker-input').value.trim();
-  const stagesText = document.getElementById('tracker-stages-input').value.trim();
+  const totalDays = parseInt(document.getElementById('tracker-days-total').value) || 30;
   const dateInput = document.getElementById('tracker-date-input').value;
-  const dayInput = document.getElementById('tracker-day-input').value;
 
   if (!title) return;
   const fechaHoy = new Date().toISOString().split('T')[0];
-  const stages = stagesText ? stagesText.split(',').map(s => s.trim()).filter(s => s.length > 0) : ["Germinación", "Agua Pura", "Solución 50%", "Cosecha"];
 
   database.ref('trackers').push({
     title: title,
-    stages: stages,
-    startDate: dateInput ? dateInput : fechaHoy,
-    startDay: parseInt(dayInput) || 1
+    totalDays: totalDays,
+    startDate: dateInput ? dateInput : fechaHoy
   });
 
   document.getElementById('tracker-input').value = '';
-  document.getElementById('tracker-day-input').value = '1';
   document.getElementById('tracker-date-input').value = '';
 }
 
@@ -394,18 +413,26 @@ function renderTrackerItem(key, item) {
   if (!container) return;
   const isAdmin = (userRole || localStorage.getItem("hidro_role")) === 'admin';
   
+  const totalDays = item.totalDays || 30;
   const fechaValida = item.startDate || new Date().toISOString().split('T')[0];
   const diffDays = Math.floor(Math.max(0, new Date() - new Date(fechaValida)) / (1000 * 60 * 60 * 24));
-  let currentDay = Math.min(30, Math.max(1, (item.startDay || 1) + diffDays));
-  const percentage = Math.min(100, Math.max(0, (currentDay / 30) * 100));
+  let currentDay = Math.min(totalDays, Math.max(1, 1 + diffDays));
+  const percentage = Math.min(100, Math.max(0, (currentDay / totalDays) * 100));
 
-  const stages = item.stages || ["Germinación", "Agua Pura", "Solución 50%", "Cosecha"];
-  let stagesHTML = '';
-  const segmentWidth = (100 / stages.length).toFixed(2);
-  
-  stages.forEach(stageName => {
-    stagesHTML += `<div class="tracker-stage-segment" style="width: ${segmentWidth}%;">${stageName}</div>`;
-  });
+  // Cálculo proporcional estricto de los segmentos
+  const diasAgua = Math.min(7, totalDays);
+  const dias50 = Math.min(7, Math.max(0, totalDays - 7));
+  const dias100 = Math.max(0, totalDays - 14);
+
+  const wAgua = ((diasAgua / totalDays) * 100).toFixed(2);
+  const w50 = ((dias50 / totalDays) * 100).toFixed(2);
+  const w100 = ((dias100 / totalDays) * 100).toFixed(2);
+
+  let stagesHTML = `
+    <div class="tracker-stage-segment" style="width: ${wAgua}%; background: rgba(0, 114, 255, 0.45);" title="Agua: 7 días">Agua (7d)</div>
+    <div class="tracker-stage-segment" style="width: ${w50}%; background: rgba(255, 183, 3, 0.45);" title="Solución 50%: 7 días">Sol. 50% (7d)</div>
+    <div class="tracker-stage-segment" style="width: ${w100}%; background: rgba(53, 229, 138, 0.45);" title="Solución 100%: Resto">Sol. 100% (${dias100}d)</div>
+  `;
 
   const div = document.createElement('div');
   div.className = 'tracker-item';
@@ -413,7 +440,7 @@ function renderTrackerItem(key, item) {
     <div class="tracker-header">
       <span class="tracker-title">${item.title}</span>
       <div class="tracker-actions">
-        <span class="tracker-days">Día ${currentDay} / 30</span>
+        <span class="tracker-days">Día ${currentDay} / ${totalDays}</span>
         ${isAdmin ? `<button class="tracker-delete" onclick="database.ref('trackers/${key}').remove()"><i class="fa-solid fa-xmark"></i></button>` : ''}
       </div>
     </div>
@@ -423,7 +450,7 @@ function renderTrackerItem(key, item) {
     </div>
     <div class="tracker-dates">
       <span>Inicio: ${fechaValida}</span>
-      <span>Cosecha: +30d</span>
+      <span>Cosecha: +${totalDays}d</span>
     </div>
   `;
   container.appendChild(div);
