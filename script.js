@@ -48,7 +48,6 @@ document.addEventListener("DOMContentLoaded", () => {
   iniciarReloj();
   inicializarGrafica();
   
-  // Cargar tema visual guardado
   const savedTheme = localStorage.getItem("hidro_theme") || "theme-emerald";
   cambiarTemaVisual(savedTheme, false);
   const themeSel = document.getElementById('themeSelector');
@@ -63,7 +62,6 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarMantenimientoFirebase();
 });
 
-// 1. Selector de Temas Visuales
 function cambiarTemaVisual(themeName, guardar = true) {
   document.body.className = themeName;
   if (guardar) localStorage.setItem("hidro_theme", themeName);
@@ -73,7 +71,23 @@ function cambiarHuerto(tipo, btnElement) {
   huertoActivo = tipo;
   document.querySelectorAll('.huerto-tab').forEach(t => t.classList.remove('active'));
   btnElement.classList.add('active');
-  document.getElementById('currentHuertoTitle').innerText = tipo === 'nft' ? 'Huerto NFT' : 'Raíces Flotantes';
+  
+  const titleEl = document.getElementById('currentHuertoTitle');
+  const panelTitle = document.getElementById('panelActuadoresTitle');
+  const gridNft = document.getElementById('gridActuadoresNft');
+  const gridRaices = document.getElementById('gridActuadoresRaices');
+
+  if (tipo === 'nft') {
+    titleEl.innerText = "Huerto NFT Principal";
+    panelTitle.innerText = "Huerto NFT";
+    gridNft.classList.remove('hidden');
+    gridRaices.classList.add('hidden');
+  } else {
+    titleEl.innerText = "Huerto Raíces Flotantes";
+    panelTitle.innerText = "Raíces Flotantes";
+    gridNft.classList.add('hidden');
+    gridRaices.classList.remove('hidden');
+  }
   escucharFirebase();
 }
 
@@ -160,7 +174,6 @@ function cambiarMetricaGrafica() {
   calcularEstadisticasAvanzadas(metric);
 }
 
-// 2. Analítica y Estadísticas Avanzadas (Mín, Máx, Promedio)
 function calcularEstadisticasAvanzadas(metric) {
   const arr = historyData[metric];
   if (!arr || arr.length === 0) {
@@ -172,7 +185,6 @@ function calcularEstadisticasAvanzadas(metric) {
   const min = Math.min(...arr);
   const max = Math.max(...arr);
   const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
-
   document.getElementById('statMin').innerText = min.toFixed(2);
   document.getElementById('statAvg').innerText = avg.toFixed(2);
   document.getElementById('statMax').innerText = max.toFixed(2);
@@ -204,25 +216,44 @@ function cargarHistorialFirebase() {
   database.ref('historial').limitToLast(30).once('value', (snap) => {
     const data = snap.val();
     const tbody = document.getElementById('tablaHistorialBody');
-    if (!tbody || !data) return;
+    if (!tbody) return;
+    
+    if (!data) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 10px;">No hay registros históricos.</td></tr>`;
+      return;
+    }
+
     labelsHora.length = 0; Object.keys(historyData).forEach(k => historyData[k].length = 0);
     tbody.innerHTML = '';
 
     Object.keys(data).forEach(k => {
       const r = data[k];
-      labelsHora.push(r.timestamp ? new Date(r.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '');
-      historyData.ph.push(r.ph || 0); historyData.temperatura.push(r.temperatura || 0);
-      historyData.ec.push(r.ec || 0); historyData.humedad.push(r.humedad || 0);
+      const fechaLegible = r.timestamp ? new Date(r.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : "Automático";
 
-      tbody.prepend(`<tr><td>${r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : ''}</td><td>${r.ph?.toFixed(1)}</td><td>${r.ec?.toFixed(1)}</td><td>${r.temperatura?.toFixed(1)}°C</td></tr>`);
+      labelsHora.push(fechaLegible);
+      historyData.ph.push(r.ph || 0);
+      historyData.temperatura.push(r.temperatura || 0);
+      historyData.ec.push(r.ec || 0);
+      historyData.humedad.push(r.humedad || 0);
+
+      const fila = document.createElement('tr');
+      fila.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+      fila.innerHTML = `
+        <td style="padding: 8px; color: var(--text-main);">${fechaLegible}</td>
+        <td style="padding: 8px;">${r.ph !== undefined ? r.ph.toFixed(1) : '--'}</td>
+        <td style="padding: 8px;">${r.ec !== undefined ? r.ec.toFixed(1) : '--'}</td>
+        <td style="padding: 8px;">${r.temperatura !== undefined ? r.temperatura.toFixed(1) : '--'} °C</td>
+        <td style="padding: 8px;">${r.humedad !== undefined ? Math.round(r.humedad) : '--'} %</td>
+      `;
+      tbody.prepend(fila);
     });
     cambiarMetricaGrafica();
   });
 }
 
-// 3. Diagnóstico ESP32 (RSSI, Uptime, Heap) y Escucha Firebase
 function escucharFirebase() {
-  database.ref(huertoActivo === 'nft' ? 'sensores' : 'sensores_raices').on('value', (snap) => {
+  const nodoSensores = huertoActivo === 'nft' ? 'sensores' : 'sensores_raices';
+  database.ref(nodoSensores).on('value', (snap) => {
     const data = snap.val();
     if (data) {
       ultimaVezDatos = Date.now();
@@ -241,7 +272,15 @@ function escucharFirebase() {
     }
   });
 
-  // Escuchar nodo de diagnóstico del ESP32
+  if (intervaloVerificacion) clearInterval(intervaloVerificacion);
+  intervaloVerificacion = setInterval(() => {
+    const transcurrido = Date.now() - ultimaVezDatos;
+    if (transcurrido > 15000) {
+      document.getElementById('statusBadge').className = "status-indicator offline";
+      document.getElementById('statusText').innerText = "ESP32 Desconectado";
+    }
+  }, 3000);
+
   database.ref('diagnostico').on('value', (snap) => {
     const diag = snap.val();
     if (diag) {
@@ -251,12 +290,18 @@ function escucharFirebase() {
     }
   });
 
-  database.ref(huertoActivo === 'nft' ? 'actuadores' : 'actuadores_raices').on('value', (snap) => {
+  const nodoActuadores = huertoActivo === 'nft' ? 'actuadores' : 'actuadores_raices';
+  database.ref(nodoActuadores).on('value', (snap) => {
     const act = snap.val();
     if (act) {
-      actualizarBotonUI('bomba_principal', act.bomba_principal);
-      actualizarBotonUI('bomba_muestreo', act.bomba_muestreo);
-      actualizarBotonUI('peltier', act.peltier);
+      if (huertoActivo === 'nft') {
+        actualizarBotonUI('bomba_principal', act.bomba_principal);
+        actualizarBotonUI('bomba_muestreo', act.bomba_muestreo);
+        actualizarBotonUI('peltier', act.peltier);
+      } else {
+        actualizarBotonUI('raices_peltier', act.peltier);
+        actualizarBotonUI('bomba_aire', act.bomba_aire);
+      }
     }
   });
 
@@ -278,19 +323,28 @@ function escucharFirebase() {
 function toggleActuador(act, estado) {
   if ((userRole || localStorage.getItem("hidro_role")) === 'guest') return;
   actualizarBotonUI(act, estado);
-  database.ref(`${huertoActivo === 'nft' ? 'actuadores' : 'actuadores_raices'}/${act}`).set(estado);
+  
+  if (huertoActivo === 'nft') {
+    database.ref(`actuadores/${act}`).set(estado);
+  } else {
+    let firebaseKey = act === 'raices_peltier' ? 'peltier' : 'bomba_aire';
+    database.ref(`actuadores_raices/${firebaseKey}`).set(estado);
+  }
 }
 
 function actualizarBotonUI(id, estado) {
   const btn = document.getElementById('btn-' + id);
   if (btn) btn.checked = Boolean(estado);
-  const statusEl = document.getElementById(id === 'bomba_principal' ? 'statusBombaPrincipal' : id === 'bomba_muestreo' ? 'statusBomba2' : 'statusPeltier');
+  const statusEl = document.getElementById(
+    id === 'bomba_principal' ? 'statusBombaPrincipal' : 
+    id === 'bomba_muestreo' ? 'statusBomba2' : 
+    id === 'peltier' || id === 'raices_peltier' ? (id === 'raices_peltier' ? 'statusRaicesPeltier' : 'statusPeltier') : 'statusBombaAire'
+  );
   if (statusEl) {
     statusEl.innerHTML = `<span class="status-dot" style="background:${estado ? 'var(--green-bright)' : ''}"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
   }
 }
 
-// 4. Calibración & Registro de Insumos
 function registrarCalibracion() {
   const hoy = new Date().toLocaleDateString();
   database.ref('mantenimiento/calibracion').set(hoy);
@@ -304,7 +358,6 @@ function cargarMantenimientoFirebase() {
   });
 }
 
-// 6. Programador de Horarios en la Nube
 function guardarProgramacion() {
   const act = document.getElementById('schedActuator').value;
   const on = document.getElementById('schedTimeOn').value;
@@ -313,23 +366,27 @@ function guardarProgramacion() {
   alert("Regla horaria guardada en Firebase.");
 }
 
-// 5. Trackers con Notas de Campo
+// TRACKERS CON ETAPAS PERSONALIZADAS MANUALMENTE
 function addTracker() {
   const title = document.getElementById('tracker-input').value.trim();
-  if (!title) return;
-  database.ref('trackers').push({
-    title,
-    startDate: document.getElementById('tracker-date-input').value || new Date().toISOString().split('T')[0],
-    totalDays: parseInt(document.getElementById('tracker-days-total').value) || 30,
-    stages: [{name: "Germinación", completed:false}, {name: "Agua", completed:false}, {name: "Solución", completed:false}],
-    notes: []
-  });
-  document.getElementById('tracker-input').value = '';
-}
+  const stagesText = document.getElementById('tracker-stages-input').value.trim();
+  const dateInput = document.getElementById('tracker-date-input').value;
+  const dayInput = document.getElementById('tracker-day-input').value;
 
-function guardarNotaTracker(key, noteText) {
-  if (!noteText.trim()) return;
-  database.ref(`trackers/${key}/notes`).push({ text: noteText, time: new Date().toLocaleTimeString() });
+  if (!title) return;
+  const fechaHoy = new Date().toISOString().split('T')[0];
+  const stages = stagesText ? stagesText.split(',').map(s => s.trim()).filter(s => s.length > 0) : ["Germinación", "Agua Pura", "Solución 50%", "Cosecha"];
+
+  database.ref('trackers').push({
+    title: title,
+    stages: stages,
+    startDate: dateInput ? dateInput : fechaHoy,
+    startDay: parseInt(dayInput) || 1
+  });
+
+  document.getElementById('tracker-input').value = '';
+  document.getElementById('tracker-day-input').value = '1';
+  document.getElementById('tracker-date-input').value = '';
 }
 
 function renderTrackerItem(key, item) {
@@ -337,17 +394,18 @@ function renderTrackerItem(key, item) {
   if (!container) return;
   const isAdmin = (userRole || localStorage.getItem("hidro_role")) === 'admin';
   
-  let stagesHTML = '';
-  if (item.stages) {
-    item.stages.forEach((s, idx) => {
-      stagesHTML += `<div class="tracker-stage-box ${s.completed ? 'completed-check' : ''}" onclick="database.ref('trackers/${key}/stages/${idx}/completed').set(!${s.completed})">${s.name}</div>`;
-    });
-  }
+  const fechaValida = item.startDate || new Date().toISOString().split('T')[0];
+  const diffDays = Math.floor(Math.max(0, new Date() - new Date(fechaValida)) / (1000 * 60 * 60 * 24));
+  let currentDay = Math.min(30, Math.max(1, (item.startDay || 1) + diffDays));
+  const percentage = Math.min(100, Math.max(0, (currentDay / 30) * 100));
 
-  let notesHTML = '';
-  if (item.notes) {
-    Object.values(item.notes).forEach(n => { notesHTML += `<div>• [${n.time}] ${n.text}</div>`; });
-  }
+  const stages = item.stages || ["Germinación", "Agua Pura", "Solución 50%", "Cosecha"];
+  let stagesHTML = '';
+  const segmentWidth = (100 / stages.length).toFixed(2);
+  
+  stages.forEach(stageName => {
+    stagesHTML += `<div class="tracker-stage-segment" style="width: ${segmentWidth}%;">${stageName}</div>`;
+  });
 
   const div = document.createElement('div');
   div.className = 'tracker-item';
@@ -355,15 +413,17 @@ function renderTrackerItem(key, item) {
     <div class="tracker-header">
       <span class="tracker-title">${item.title}</span>
       <div class="tracker-actions">
-        <span class="tracker-days">${item.totalDays} Días</span>
+        <span class="tracker-days">Día ${currentDay} / 30</span>
         ${isAdmin ? `<button class="tracker-delete" onclick="database.ref('trackers/${key}').remove()"><i class="fa-solid fa-xmark"></i></button>` : ''}
       </div>
     </div>
-    <div class="tracker-stages-container">${stagesHTML}</div>
-    <div class="tracker-notes-section">
-      <span>Notas de campo:</span>
-      <div class="tracker-notes-list">${notesHTML || 'Sin notas registradas.'}</div>
-      ${isAdmin ? `<input type="text" class="tracker-notes-input" placeholder="Añadir nota rápida..." onkeydown="if(event.key==='Enter'){guardarNotaTracker('${key}', this.value); this.value='';}">` : ''}
+    <div class="tracker-visual-bar">
+      ${stagesHTML}
+      <div class="tracker-cursor" style="left: ${percentage}%;"></div>
+    </div>
+    <div class="tracker-dates">
+      <span>Inicio: ${fechaValida}</span>
+      <span>Cosecha: +30d</span>
     </div>
   `;
   container.appendChild(div);
