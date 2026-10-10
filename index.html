@@ -22,16 +22,18 @@
   <div class="ambient-glow orb-2"></div>
   <div class="ambient-glow orb-3"></div>
 
-  <!-- LOGIN OVERLAY HEXAGONAL GLASS -->
+  <!-- LOGIN OVERLAY -->
   <div id="loginOverlay" class="login-overlay">
     <div class="login-hex-card" id="loginCard">
-      <div class="hex-avatar-badge">
-        <div class="hex-avatar-inner" id="hexAvatarIcon"><i class="fa-solid fa-user-gear"></i></div>
+      <div class="login-avatar-top">
+        <div class="login-avatar-inner" id="hexAvatarIcon">
+          <i class="fa-solid fa-seedling"></i>
+        </div>
       </div>
 
       <div class="hex-card-content">
-        <span class="hex-badge-label"><i class="fa-solid fa-leaf"></i>IoT</span>
-        <h2>Sign In</h2>
+        <span class="hex-badge-label"><i class="fa-solid fa-shield-halved"></i> IoT</span>
+        <h2>ACCESO</h2>
         <p class="login-subtitle">Seleccione su perfil de acceso</p>
 
         <div class="hyde-users-grid" id="hydeUsersGrid">
@@ -81,7 +83,7 @@
           </div>
 
           <button type="submit" class="btn-hex-submit" id="btnLogin">
-            <span>LOGIN</span>
+            <span>ENTRAR AL SISTEMA</span>
             <i class="fa-solid fa-arrow-right-long"></i>
           </button>
         </form>
@@ -107,9 +109,10 @@
           <span id="liveClock">00:00:00</span>
         </div>
         <select id="themeSelector" class="select-metric" onchange="cambiarTemaVisual(this.value)" title="Tema visual">
-          <option value="theme-emerald">Esmeralda ESH</option>
+          <option value="theme-emerald">Modo Planta</option>
           <option value="theme-cyberpunk">Modo Neón</option>
-          <option value="theme-light">Modo Diurno</option>
+          <option value="theme-midnight">Modo Nocturno</option>
+          <option value="theme-sunset">Modo Cálido</option>
         </select>
         <button class="btn-install" id="btnNotify" onclick="solicitarNotificaciones()" title="Activar Notificaciones">
           <i class="fa-solid fa-bell"></i> Notificaciones
@@ -171,7 +174,7 @@
 
       <!-- DIAGNÓSTICO ESP32 -->
       <div class="card diagnostics-card" style="margin-bottom: 25px;">
-        <h3><i class="fa-solid fa-microchip"></i> Diagnóstico y Salud del ESP32</h3>
+        <h3><i class="fa-solid fa-microchip"></i> Diagnóstico del ESP32</h3>
         <div class="diag-grid">
           <div class="diag-item"><i class="fa-solid fa-wifi"></i> Señal WiFi (RSSI): <strong id="diagRssi">-- dBm</strong></div>
           <div class="diag-item"><i class="fa-solid fa-clock-rotate-left"></i> Tiempo Activo: <strong id="diagUptime">-- min</strong></div>
@@ -317,7 +320,7 @@
         </div>
 
         <div class="card checklist-card">
-          <h3><i class="fa-solid fa-list-check"></i> Checklist Operativo ESH</h3>
+          <h3><i class="fa-solid fa-list-check"></i> Checklist</h3>
           <p class="card-subtitle">Gestión de tareas del huerto.</p>
           <div class="input-group-add admin-only">
             <input type="text" id="task-input" placeholder="Ej: Revisar nivel de nutrientes...">

@@ -429,9 +429,9 @@ function renderTrackerItem(key, item) {
   const w100 = ((dias100 / totalDays) * 100).toFixed(2);
 
   let stagesHTML = `
-    <div class="tracker-stage-segment" style="width: ${wAgua}%; background: rgba(0, 114, 255, 0.45);" title="Agua: 7 días">Agua (7d)</div>
-    <div class="tracker-stage-segment" style="width: ${w50}%; background: rgba(255, 183, 3, 0.45);" title="Solución 50%: 7 días">Sol. 50% (7d)</div>
-    <div class="tracker-stage-segment" style="width: ${w100}%; background: rgba(53, 229, 138, 0.45);" title="Solución 100%: Resto">Sol. 100% (${dias100}d)</div>
+    <div class="tracker-stage-segment stage-agua" style="width: ${wAgua}%;" title="Agua: 7 días">Agua (7d)</div>
+    <div class="tracker-stage-segment stage-sol50" style="width: ${w50}%;" title="Solución 50%: 7 días">Sol. 50% (7d)</div>
+    <div class="tracker-stage-segment stage-sol100" style="width: ${w100}%;" title="Solución 100%: Resto">Sol. 100% (${dias100}d)</div>
   `;
 
   const div = document.createElement('div');
