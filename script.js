@@ -300,8 +300,9 @@ function exportarCSV() {
 }
 
 function purgarBitacoraFirebase() {
-  if (confirm("¿Purgar historial en Firebase?")) {
+  if (confirm("¿Purgar historial de lecturas y bitácora en Firebase?")) {
     database.ref('historial').remove().then(() => cargarHistorialFirebase());
+    database.ref('mantenimiento').remove().then(() => cargarMantenimientoFirebase());
   }
 }
 
@@ -367,20 +368,11 @@ function escucharFirebase() {
       if(document.getElementById('ecBar')) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
       if(document.getElementById('tempBar')) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
       if(document.getElementById('humBar')) document.getElementById('humBar').style.width = (data.humedad || 0) + '%';
-// Validación de estado de sensores en tiempo real
-      const tempBadge = document.getElementById('status-temp');
-      if (tempBadge) {
-        if (data.temperatura === undefined || data.temperatura === null || data.temperatura <= -127) {
-          tempBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Error`;
-          tempBadge.style.color = "var(--danger)";
-        } else {
-          tempBadge.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> OK`;
-          tempBadge.style.color = "var(--green-bright)";
-        }
-      }
+
+      // --- VALIDACIONES DE SALUD DE SENSORES EN TIEMPO REAL ---
       const phBadge = document.getElementById('status-ph');
       if (phBadge) {
-        if (data.ph === undefined || data.ph === null || data.ph < 0 || data.ph > 14) {
+        if (data.ph === undefined || data.ph === null || isNaN(data.ph) || data.ph <= 0 || data.ph > 14) {
           phBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Error`;
           phBadge.style.color = "var(--danger)";
         } else {
@@ -388,6 +380,40 @@ function escucharFirebase() {
           phBadge.style.color = "var(--green-bright)";
         }
       }
+
+      const ecBadge = document.getElementById('status-ec');
+      if (ecBadge) {
+        if (data.ec === undefined || data.ec === null || isNaN(data.ec) || data.ec < 0) {
+          ecBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Error`;
+          ecBadge.style.color = "var(--danger)";
+        } else {
+          ecBadge.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> OK`;
+          ecBadge.style.color = "var(--green-bright)";
+        }
+      }
+
+      const tempBadge = document.getElementById('status-temp');
+      if (tempBadge) {
+        if (data.temperatura === undefined || data.temperatura === null || isNaN(data.temperatura) || data.temperatura <= -127) {
+          tempBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Error`;
+          tempBadge.style.color = "var(--danger)";
+        } else {
+          tempBadge.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> OK`;
+          tempBadge.style.color = "var(--green-bright)";
+        }
+      }
+
+      const humBadge = document.getElementById('status-hum');
+      if (humBadge) {
+        if (data.humedad === undefined || data.humedad === null || isNaN(data.humedad) || data.humedad < 0 || data.humedad > 100) {
+          humBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Error`;
+          humBadge.style.color = "var(--danger)";
+        } else {
+          humBadge.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> OK`;
+          humBadge.style.color = "var(--green-bright)";
+        }
+      }
+
       evaluarAlertasAnomalias(data);
     } else {
       marcarDesconectado();
@@ -528,10 +554,41 @@ function evaluarAlertasAnomalias(d) {
   }
 }
 
+// --- REGISTRO Y CARGA AVANZADA DE CALIBRACIÓN EN LA BITÁCORA ---
 function registrarCalibracionSonda(tipo) {
   const hoy = new Date().toLocaleDateString('es-MX');
+  const horaActual = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  const fechaCompleta = `${hoy} ${horaActual}`;
+  
+  let eventoDesc = "";
+  let idLabel = "";
+
+  if (tipo === 'ph') {
+    eventoDesc = "Calibración Sonda pH (Buffers 4.0 / 7.0 / 10.0)";
+    idLabel = "calibPhDate";
+  } else if (tipo === 'ec') {
+    eventoDesc = "Calibración Sonda Conductividad (CE/TDS Standard)";
+    idLabel = "calibEcDate";
+  } else if (tipo === 'temp') {
+    eventoDesc = "Calibración Offset Temperatura Agua DS18B20";
+    idLabel = "calibTempDate";
+  }
+
+  if (document.getElementById(idLabel)) document.getElementById(idLabel).innerText = hoy;
+
   database.ref(`mantenimiento/calibracion_${tipo}`).set(hoy);
-  alert(`¡Calibración de la sonda de ${tipo.toUpperCase()} guardada!`);
+
+  const rolOperador = (userRole || localStorage.getItem("hidro_role")) === 'admin' ? 'H.A.G.D.R.' : 'Hidrouser';
+  
+  database.ref('mantenimiento/eventos').push({
+    evento: eventoDesc,
+    usuario: rolOperador,
+    fecha: fechaCompleta,
+    tipo: tipo,
+    timestamp: Date.now()
+  });
+
+  alert(`¡${eventoDesc} registrada exitosamente y guardada en la bitácora!`);
 }
 
 function cargarMantenimientoFirebase() {
@@ -542,6 +599,26 @@ function cargarMantenimientoFirebase() {
       if (m.calibracion_ec && document.getElementById('calibEcDate')) document.getElementById('calibEcDate').innerText = m.calibracion_ec;
       if (m.calibracion_temp && document.getElementById('calibTempDate')) document.getElementById('calibTempDate').innerText = m.calibracion_temp;
     }
+  });
+
+  database.ref('mantenimiento/eventos').limitToLast(15).on('value', (snap) => {
+    const eventos = snap.val();
+    const tbody = document.getElementById('tablaHistorialBody');
+    if (!tbody || !eventos) return;
+
+    tbody.innerHTML = '';
+    Object.values(eventos).reverse().forEach(reg => {
+      const fila = document.createElement('tr');
+      fila.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+      fila.innerHTML = `
+        <td style="padding: 8px; color: var(--cyan-neon); font-weight: 600;">${reg.fecha || 'N/D'}</td>
+        <td colspan="4" style="padding: 8px;">
+          <strong><i class="fa-solid fa-screwdriver-wrench" style="color: var(--warning); margin-right: 5px;"></i>${reg.evento}</strong>
+          <br><small style="opacity: 0.7;">Operador: ${reg.usuario}</small>
+        </td>
+      `;
+      tbody.appendChild(fila);
+    });
   });
 }
 
