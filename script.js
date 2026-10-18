@@ -41,7 +41,7 @@ let refSensoresActual = null;
 let refActuadoresActual = null;
 
 const configMap = {
-  ph: { label: 'pH', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
+  ph: { label: 'pH del Agua', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
   temperatura: { label: 'Temperatura (°C)', color: '#ff5d67', bg: 'rgba(255, 93, 103, 0.15)' },
   ec: { label: 'CE (mS/cm)', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.15)' },
   humedad: { label: 'Humedad (%)', color: '#35e58a', bg: 'rgba(53, 229, 138, 0.15)' }
@@ -68,6 +68,20 @@ document.addEventListener("DOMContentLoaded", () => {
 function cambiarTemaVisual(themeName, guardar = true) {
   document.body.className = themeName;
   if (guardar) localStorage.setItem("hidro_theme", themeName);
+}
+
+function mostrarSeccion(secId) {
+  document.querySelectorAll('.app-section').forEach(sec => sec.classList.add('hidden'));
+  document.querySelectorAll('.nav-sec-btn').forEach(btn => btn.classList.remove('active'));
+
+  const secObj = document.getElementById('section-' + secId);
+  const btnObj = document.getElementById('sec-btn-' + secId);
+  if (secObj) secObj.classList.remove('hidden');
+  if (btnObj) btnObj.classList.add('active');
+
+  if (secId === 'sensors' && sensorChart) {
+    setTimeout(() => sensorChart.resize(), 100);
+  }
 }
 
 function cambiarHuerto(tipo) {
@@ -106,6 +120,13 @@ function marcarDesconectado() {
   document.getElementById('ecValue').innerText = '--';
   document.getElementById('tempValue').innerText = '--';
   document.getElementById('humValue').innerText = '--';
+
+  const banner = document.getElementById('systemBanner');
+  if (banner) {
+    banner.style.background = "rgba(255, 93, 103, 0.12)";
+    banner.style.borderColor = "rgba(255, 93, 103, 0.4)";
+    banner.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> <span>ESP32 Fuera de Línea · Sin conexión Wi-Fi o alimentación</span>`;
+  }
 }
 
 function toggleMostrarPass() {
@@ -118,8 +139,7 @@ function toggleMostrarPass() {
 
 function seleccionarPerfil(user) {
   document.getElementById('userInput').value = user;
-  document.getElementById('selectedUserLabel').innerText = user;
-  document.getElementById('hexAvatarIcon').innerHTML = (user === 'H.A.G.D.R.') ? '<i class="fa-solid fa-user-shield"></i>' : '<i class="fa-solid fa-binoculars"></i>';
+  document.getElementById('selectedUserLabel').innerText = user === 'H.A.G.D.R.' ? 'H.A.G.D.R. (Administrador)' : 'Hidrouser (Monitor)';
   document.getElementById('hydeUsersGrid').classList.add('hidden');
   document.getElementById('loginForm').classList.remove('hidden');
   document.getElementById('passInput').focus();
@@ -150,23 +170,23 @@ function autenticar() {
 
 function mostrarInterfaz() {
   const overlay = document.getElementById("loginOverlay");
-  overlay.style.transition = "opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)";
+  overlay.style.transition = "opacity 0.5s ease, transform 0.5s ease";
   overlay.style.opacity = "0";
-  overlay.style.transform = "scale(1.04)";
+  overlay.style.transform = "scale(1.05)";
   
   setTimeout(() => {
     overlay.classList.add("hidden");
     const app = document.getElementById("appContainer");
     app.classList.remove("hidden");
-    app.style.opacity = "0";
-    app.style.transition = "opacity 0.8s ease";
-    setTimeout(() => {
-      app.style.opacity = "1";
-    }, 50);
-  }, 600);
+  }, 500);
+
+  const roleText = (userRole || localStorage.getItem("hidro_role")) === 'admin' ? 'Administrador General' : 'Monitor de Campo';
+  document.getElementById('lblUserRole').innerText = roleText;
 
   if ((userRole || localStorage.getItem("hidro_role")) === 'guest') {
     document.body.classList.add('role-guest');
+  } else {
+    document.body.classList.remove('role-guest');
   }
   setTimeout(cambiarMetricaGrafica, 100);
 }
@@ -217,15 +237,15 @@ function calcularEstadisticasAvanzadas(metric) {
   const min = Math.min(...arr);
   const max = Math.max(...arr);
   const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
-  document.getElementById('statMin').innerText = min.toFixed(2);
-  document.getElementById('statAvg').innerText = avg.toFixed(2);
-  document.getElementById('statMax').innerText = max.toFixed(2);
+  document.getElementById('statMin').innerText = min.toFixed(1);
+  document.getElementById('statAvg').innerText = avg.toFixed(1);
+  document.getElementById('statMax').innerText = max.toFixed(1);
 }
 
 function exportarCSV() {
   database.ref('historial').limitToLast(300).once('value', (snap) => {
     const data = snap.val();
-    if (!data) return alert("Sin datos.");
+    if (!data) return alert("Sin registros disponibles.");
     let csv = "data:text/csv;charset=utf-8,Fecha,pH,EC,Temp,Humedad\n";
     Object.keys(data).forEach(k => {
       const r = data[k];
@@ -233,13 +253,13 @@ function exportarCSV() {
     });
     const link = document.createElement("a");
     link.href = encodeURI(csv);
-    link.download = `Bitacora_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `Bitacora_Hidroponica_${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   });
 }
 
 function purgarBitacoraFirebase() {
-  if (confirm("¿Purgar historial antiguo de Firebase?")) {
+  if (confirm("¿Está seguro de borrar el historial antiguo acumulado en Firebase?")) {
     database.ref('historial').remove().then(() => cargarHistorialFirebase());
   }
 }
@@ -249,7 +269,7 @@ function cargarHistorialFirebase() {
     const data = snap.val();
     const tbody = document.getElementById('tablaHistorialBody');
     if (!tbody) return;
-    if (!data) { tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 10px;">Sin registros.</td></tr>`; return; }
+    if (!data) { tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 15px;">Sin registros grabados.</td></tr>`; return; }
 
     labelsHora.length = 0; Object.keys(historyData).forEach(k => historyData[k].length = 0);
     tbody.innerHTML = '';
@@ -290,6 +310,13 @@ function escucharFirebase() {
       document.getElementById('statusBadge').className = "status-indicator online";
       document.getElementById('statusText').innerText = "ESP32 Conectado";
 
+      const banner = document.getElementById('systemBanner');
+      if (banner) {
+        banner.style.background = "rgba(53, 229, 138, 0.12)";
+        banner.style.borderColor = "rgba(53, 229, 138, 0.4)";
+        banner.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> <span>Sistema Online · Datos actualizados desde ESP32</span>`;
+      }
+
       document.getElementById('phValue').innerText = data.ph !== undefined ? Number(data.ph).toFixed(1) : '--';
       document.getElementById('ecValue').innerText = data.ec !== undefined ? Number(data.ec).toFixed(1) : '--';
       document.getElementById('tempValue').innerText = data.temperatura !== undefined ? Number(data.temperatura).toFixed(1) : '--';
@@ -299,10 +326,18 @@ function escucharFirebase() {
       if(document.getElementById('ecBar')) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
       if(document.getElementById('tempBar')) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
       if(document.getElementById('humBar')) document.getElementById('humBar').style.width = (data.humedad || 0) + '%';
-
-      evaluarAlertas(data);
     } else {
       marcarDesconectado();
+    }
+  });
+
+  // Diagnóstico Hardware
+  database.ref('diagnostico').on('value', (snap) => {
+    const diag = snap.val();
+    if (diag) {
+      if (document.getElementById('diagRssi')) document.getElementById('diagRssi').innerText = (diag.rssi || '--') + ' dBm';
+      if (document.getElementById('diagUptime')) document.getElementById('diagUptime').innerText = (diag.uptime || '--') + ' min';
+      if (document.getElementById('diagHeap')) document.getElementById('diagHeap').innerText = (diag.heap || '--') + ' KB';
     }
   });
 
@@ -363,14 +398,14 @@ function actualizarBotonUI(id, estado) {
     id === 'peltier' || id === 'raices_peltier' ? (id === 'raices_peltier' ? 'statusRaicesPeltier' : 'statusPeltier') : 'statusBombaAire'
   );
   if (statusEl) {
-    statusEl.innerHTML = `<span class="status-dot" style="background:${estado ? 'var(--green-bright)' : ''}"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
+    statusEl.innerHTML = `<span class="status-dot" style="background:${estado ? 'var(--green-bright)' : 'var(--danger)'}"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
   }
 }
 
 function registrarCalibracion() {
   const hoy = new Date().toLocaleDateString();
   database.ref('mantenimiento/calibracion').set(hoy);
-  alert("Fecha de calibración registrada.");
+  alert("¡Fecha de calibración actualizada en Firebase!");
 }
 
 function cargarMantenimientoFirebase() {
@@ -385,50 +420,14 @@ function guardarProgramacion() {
   const on = document.getElementById('schedTimeOn').value;
   const off = document.getElementById('schedTimeOff').value;
   database.ref(`schedules/${act}`).set({ on, off });
-  alert("Regla guardada.");
+  alert("Regla de horario guardada con éxito.");
 }
 
 function solicitarNotificaciones() {
-  if (!messaging) {
-    alert("Tu navegador no soporta notificaciones push nativas.");
-    return;
-  }
-
+  if (!messaging) return alert("Tu navegador no soporta notificaciones push.");
   Notification.requestPermission().then((permission) => {
-    if (permission === 'granted') {
-      console.log('Permiso de notificaciones concedido.');
-      navigator.serviceWorker.register('./firebase-messaging-sw.js').then((registration) => {
-        messaging.getToken({ 
-          serviceWorkerRegistration: registration,
-          vapidKey: 'BJBLJ1psCydMWxnpj3LX5TbH6ev9Br8EjHgoBUdniqs2DHwm-5o2m20UW-TRyIUGT5ZFPQaoRgJSEKX1VCE2-M4' 
-        }).then((currentToken) => {
-          if (currentToken) {
-            const tokenKey = currentToken.substring(0, 15);
-            database.ref('fcm_tokens/' + tokenKey).set({
-              token: currentToken,
-              dispositivo: navigator.userAgent,
-              actualizado: Date.now()
-            });
-            alert("¡Notificaciones Push Nativas activadas y sincronizadas con éxito!");
-          } else {
-            console.log('No se encontró token de registro.');
-          }
-        }).catch((err) => {
-          console.error('Error al recuperar el token de FCM:', err);
-        });
-      });
-    } else {
-      alert("Permiso de notificaciones denegado.");
-    }
-  }).catch((err) => {
-    console.error('Error al solicitar permisos:', err);
+    if (permission === 'granted') alert("¡Notificaciones Push activadas!");
   });
-}
-
-function evaluarAlertas(d) {
-  if (Notification.permission === 'granted' && d.ph < 5.0 || (d && d.ph > 7.0)) {
-    // Las alertas en segundo plano ahora se manejan mediante FCM en el servidor o Cloud Functions
-  }
 }
 
 function addTracker() {
@@ -446,7 +445,6 @@ function addTracker() {
   });
 
   document.getElementById('tracker-input').value = '';
-  document.getElementById('tracker-date-input').value = '';
 }
 
 function renderTrackerItem(key, item) {
@@ -469,9 +467,9 @@ function renderTrackerItem(key, item) {
   const w100 = ((dias100 / totalDays) * 100).toFixed(2);
 
   let stagesHTML = `
-    <div class="tracker-stage-segment stage-agua" style="width: ${wAgua}%;" title="Agua: 7 días">Agua (7d)</div>
-    <div class="tracker-stage-segment stage-sol50" style="width: ${w50}%;" title="Solución 50%: 7 días">Sol. 50% (7d)</div>
-    <div class="tracker-stage-segment stage-sol100" style="width: ${w100}%;" title="Solución 100%: Resto">Sol. 100% (${dias100}d)</div>
+    <div class="tracker-stage-segment stage-agua" style="width: ${wAgua}%;">Agua (7d)</div>
+    <div class="tracker-stage-segment stage-sol50" style="width: ${w50}%;">Sol. 50% (7d)</div>
+    <div class="tracker-stage-segment stage-sol100" style="width: ${w100}%;">Sol. 100% (${dias100}d)</div>
   `;
 
   const div = document.createElement('div');
@@ -490,7 +488,7 @@ function renderTrackerItem(key, item) {
     </div>
     <div class="tracker-dates">
       <span>Inicio: ${fechaValida}</span>
-      <span>Cosecha: +${totalDays}d</span>
+      <span>Cosecha estimada: +${totalDays}d</span>
     </div>
   `;
   container.appendChild(div);
