@@ -40,6 +40,12 @@ let intervaloVerificacion = null;
 let refSensoresActual = null;
 let refActuadoresActual = null;
 
+let currentThresholds = {
+  phMin: 5.5, phMax: 6.5,
+  ecMin: 2.0, ecMax: 2.5,
+  tempMin: 18.0, tempMax: 24.0
+};
+
 const configMap = {
   ph: { label: 'pH del Agua', color: '#00f0ff', bg: 'rgba(0, 240, 255, 0.15)' },
   temperatura: { label: 'Temperatura (°C)', color: '#ff5d67', bg: 'rgba(255, 93, 103, 0.15)' },
@@ -49,7 +55,7 @@ const configMap = {
 
 document.addEventListener("DOMContentLoaded", () => {
   iniciarReloj();
-  inicializarGrafica();
+  inicializarGraficaDual();
   
   const savedTheme = localStorage.getItem("hidro_theme") || "theme-emerald";
   cambiarTemaVisual(savedTheme, false);
@@ -63,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   escucharFirebase();
   cargarHistorialFirebase();
   cargarMantenimientoFirebase();
+  cargarUmbralesFirebase();
 });
 
 function cambiarTemaVisual(themeName, guardar = true) {
@@ -92,18 +99,18 @@ function cambiarHuerto(tipo) {
   document.getElementById('tab-raices').classList.toggle('active', tipo === 'raices');
 
   const titleEl = document.getElementById('currentHuertoTitle');
-  const panelTitle = document.getElementById('panelActuadoresTitle');
+  const cardCe = document.getElementById('cardCeWrapper');
   const gridNft = document.getElementById('gridActuadoresNft');
   const gridRaices = document.getElementById('gridActuadoresRaices');
 
   if (tipo === 'nft') {
     titleEl.innerText = "Huerto NFT Principal";
-    panelTitle.innerText = "Huerto NFT";
+    if (cardCe) cardCe.classList.remove('hidden');
     gridNft.classList.remove('hidden');
     gridRaices.classList.add('hidden');
   } else {
     titleEl.innerText = "Huerto Raíces Flotantes";
-    panelTitle.innerText = "Raíces Flotantes";
+    if (cardCe) cardCe.classList.add('hidden');
     gridNft.classList.add('hidden');
     gridRaices.classList.remove('hidden');
   }
@@ -125,7 +132,7 @@ function marcarDesconectado() {
   if (banner) {
     banner.style.background = "rgba(255, 93, 103, 0.12)";
     banner.style.borderColor = "rgba(255, 93, 103, 0.4)";
-    banner.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> <span>ESP32 Fuera de Línea · Sin conexión Wi-Fi o alimentación</span>`;
+    banner.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> <span>ESP32 Fuera de Línea · Sin transmisión de datos</span>`;
   }
 }
 
@@ -188,7 +195,7 @@ function mostrarInterfaz() {
   } else {
     document.body.classList.remove('role-guest');
   }
-  setTimeout(cambiarMetricaGrafica, 100);
+  setTimeout(actualizarGraficaDual, 100);
 }
 
 function cerrarSesion() {
@@ -203,37 +210,71 @@ function iniciarReloj() {
   }, 1000);
 }
 
-function inicializarGrafica() {
+function inicializarGraficaDual() {
   const canvas = document.getElementById('sensorChart');
   if (!canvas) return;
+
   sensorChart = new Chart(canvas.getContext('2d'), {
     type: 'line',
-    data: { labels: labelsHora, datasets: [{ label: 'pH', data: historyData.ph, borderColor: '#00f0ff', borderWidth: 2, tension: 0.3, fill: true }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    data: {
+      labels: labelsHora,
+      datasets: [
+        {
+          label: 'pH',
+          data: historyData.ph,
+          borderColor: '#00f0ff',
+          backgroundColor: 'rgba(0, 240, 255, 0.1)',
+          yAxisID: 'y1',
+          tension: 0.3, fill: true
+        },
+        {
+          label: 'CE',
+          data: historyData.ec,
+          borderColor: '#ffd166',
+          backgroundColor: 'rgba(255, 209, 102, 0.1)',
+          yAxisID: 'y2',
+          tension: 0.3, fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y1: { type: 'linear', position: 'left', grid: { color: 'rgba(255,255,255,0.05)' } },
+        y2: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } }
+      }
+    }
   });
-  document.getElementById('chartSelect').addEventListener('change', cambiarMetricaGrafica);
+
+  document.getElementById('chartSelectY1').addEventListener('change', actualizarGraficaDual);
+  document.getElementById('chartSelectY2').addEventListener('change', actualizarGraficaDual);
 }
 
-function cambiarMetricaGrafica() {
-  const metric = document.getElementById('chartSelect').value;
-  const cfg = configMap[metric];
-  if (sensorChart) sensorChart.destroy();
-  sensorChart = new Chart(document.getElementById('sensorChart').getContext('2d'), {
-    type: 'line',
-    data: { labels: labelsHora, datasets: [{ label: cfg.label, data: historyData[metric], borderColor: cfg.color, backgroundColor: cfg.bg, borderWidth: 3, tension: 0.4, fill: true }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-  });
-  calcularEstadisticasAvanzadas(metric);
+function actualizarGraficaDual() {
+  const m1 = document.getElementById('chartSelectY1').value;
+  const m2 = document.getElementById('chartSelectY2').value;
+  const cfg1 = configMap[m1];
+  const cfg2 = configMap[m2];
+
+  if (!sensorChart) return;
+  sensorChart.data.datasets[0].label = cfg1.label;
+  sensorChart.data.datasets[0].data = historyData[m1];
+  sensorChart.data.datasets[0].borderColor = cfg1.color;
+  sensorChart.data.datasets[0].backgroundColor = cfg1.bg;
+
+  sensorChart.data.datasets[1].label = cfg2.label;
+  sensorChart.data.datasets[1].data = historyData[m2];
+  sensorChart.data.datasets[1].borderColor = cfg2.color;
+  sensorChart.data.datasets[1].backgroundColor = cfg2.bg;
+
+  sensorChart.update();
+  calcularEstadisticasY1(m1);
 }
 
-function calcularEstadisticasAvanzadas(metric) {
+function calcularEstadisticasY1(metric) {
   const arr = historyData[metric];
-  if (!arr || arr.length === 0) {
-    document.getElementById('statMin').innerText = '--';
-    document.getElementById('statAvg').innerText = '--';
-    document.getElementById('statMax').innerText = '--';
-    return;
-  }
+  if (!arr || arr.length === 0) return;
   const min = Math.min(...arr);
   const max = Math.max(...arr);
   const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -245,7 +286,7 @@ function calcularEstadisticasAvanzadas(metric) {
 function exportarCSV() {
   database.ref('historial').limitToLast(300).once('value', (snap) => {
     const data = snap.val();
-    if (!data) return alert("Sin registros disponibles.");
+    if (!data) return alert("Sin datos.");
     let csv = "data:text/csv;charset=utf-8,Fecha,pH,EC,Temp,Humedad\n";
     Object.keys(data).forEach(k => {
       const r = data[k];
@@ -253,13 +294,13 @@ function exportarCSV() {
     });
     const link = document.createElement("a");
     link.href = encodeURI(csv);
-    link.download = `Bitacora_Hidroponica_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `Bitacora_${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   });
 }
 
 function purgarBitacoraFirebase() {
-  if (confirm("¿Está seguro de borrar el historial antiguo acumulado en Firebase?")) {
+  if (confirm("¿Purgar historial en Firebase?")) {
     database.ref('historial').remove().then(() => cargarHistorialFirebase());
   }
 }
@@ -269,7 +310,7 @@ function cargarHistorialFirebase() {
     const data = snap.val();
     const tbody = document.getElementById('tablaHistorialBody');
     if (!tbody) return;
-    if (!data) { tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 15px;">Sin registros grabados.</td></tr>`; return; }
+    if (!data) { tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 15px;">Sin registros.</td></tr>`; return; }
 
     labelsHora.length = 0; Object.keys(historyData).forEach(k => historyData[k].length = 0);
     tbody.innerHTML = '';
@@ -292,7 +333,7 @@ function cargarHistorialFirebase() {
       `;
       tbody.prepend(fila);
     });
-    cambiarMetricaGrafica();
+    actualizarGraficaDual();
   });
 }
 
@@ -314,7 +355,7 @@ function escucharFirebase() {
       if (banner) {
         banner.style.background = "rgba(53, 229, 138, 0.12)";
         banner.style.borderColor = "rgba(53, 229, 138, 0.4)";
-        banner.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> <span>Sistema Online · Datos actualizados desde ESP32</span>`;
+        banner.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> <span>Sistema Online · Datos en vivo</span>`;
       }
 
       document.getElementById('phValue').innerText = data.ph !== undefined ? Number(data.ph).toFixed(1) : '--';
@@ -326,12 +367,13 @@ function escucharFirebase() {
       if(document.getElementById('ecBar')) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
       if(document.getElementById('tempBar')) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
       if(document.getElementById('humBar')) document.getElementById('humBar').style.width = (data.humedad || 0) + '%';
+
+      evaluarAlertasAnomalias(data);
     } else {
       marcarDesconectado();
     }
   });
 
-  // Diagnóstico Hardware
   database.ref('diagnostico').on('value', (snap) => {
     const diag = snap.val();
     if (diag) {
@@ -356,6 +398,8 @@ function escucharFirebase() {
         actualizarBotonUI('bomba_principal', act.bomba_principal);
         actualizarBotonUI('bomba_muestreo', act.bomba_muestreo);
         actualizarBotonUI('peltier', act.peltier);
+        actualizarBotonUI('bypass', act.bypass);
+        actualizarBotonUI('inyeccion', act.inyeccion);
       } else {
         actualizarBotonUI('raices_peltier', act.peltier);
         actualizarBotonUI('bomba_aire', act.bomba_aire);
@@ -395,23 +439,89 @@ function actualizarBotonUI(id, estado) {
   const statusEl = document.getElementById(
     id === 'bomba_principal' ? 'statusBombaPrincipal' : 
     id === 'bomba_muestreo' ? 'statusBomba2' : 
-    id === 'peltier' || id === 'raices_peltier' ? (id === 'raices_peltier' ? 'statusRaicesPeltier' : 'statusPeltier') : 'statusBombaAire'
+    id === 'peltier' || id === 'raices_peltier' ? (id === 'raices_peltier' ? 'statusRaicesPeltier' : 'statusPeltier') : 
+    id === 'bypass' ? 'statusBypass' : 
+    id === 'inyeccion' ? 'statusInyeccion' : 'statusBombaAire'
   );
   if (statusEl) {
-    statusEl.innerHTML = `<span class="status-dot" style="background:${estado ? 'var(--green-bright)' : 'var(--danger)'}"></span> ${estado ? 'ENCENDIDA' : 'APAGADA'}`;
+    statusEl.innerHTML = `<span class="status-dot" style="background:${estado ? 'var(--green-bright)' : 'var(--danger)'}"></span> ${estado ? 'ENCENDIDO' : 'APAGADO'}`;
+  }
+
+  if (id === 'bomba_principal' || id === 'bypass') {
+    const pipe = document.getElementById('pipeFlow');
+    if (pipe) {
+      if (estado) pipe.classList.add('flow-active');
+      else pipe.classList.remove('flow-active');
+    }
   }
 }
 
-function registrarCalibracion() {
-  const hoy = new Date().toLocaleDateString();
-  database.ref('mantenimiento/calibracion').set(hoy);
-  alert("¡Fecha de calibración actualizada en Firebase!");
+function guardarUmbrales() {
+  currentThresholds.phMin = parseFloat(document.getElementById('threshPhMin').value);
+  currentThresholds.phMax = parseFloat(document.getElementById('threshPhMax').value);
+  currentThresholds.ecMin = parseFloat(document.getElementById('threshEcMin').value);
+  currentThresholds.ecMax = parseFloat(document.getElementById('threshEcMax').value);
+  currentThresholds.tempMin = parseFloat(document.getElementById('threshTempMin').value);
+  currentThresholds.tempMax = parseFloat(document.getElementById('threshTempMax').value);
+
+  database.ref('umbrales').set(currentThresholds).then(() => {
+    alert("¡Umbrales actualizados con éxito en Firebase!");
+  });
+}
+
+function cargarUmbralesFirebase() {
+  database.ref('umbrales').on('value', (snap) => {
+    const u = snap.val();
+    if (u) {
+      currentThresholds = u;
+      if (document.getElementById('threshPhMin')) document.getElementById('threshPhMin').value = u.phMin;
+      if (document.getElementById('threshPhMax')) document.getElementById('threshPhMax').value = u.phMax;
+      if (document.getElementById('threshEcMin')) document.getElementById('threshEcMin').value = u.ecMin;
+      if (document.getElementById('threshEcMax')) document.getElementById('threshEcMax').value = u.ecMax;
+      if (document.getElementById('threshTempMin')) document.getElementById('threshTempMin').value = u.tempMin;
+      if (document.getElementById('threshTempMax')) document.getElementById('threshTempMax').value = u.tempMax;
+
+      if (document.getElementById('phRangeLabel')) document.getElementById('phRangeLabel').innerText = `${u.phMin} - ${u.phMax}`;
+      if (document.getElementById('ecRangeLabel')) document.getElementById('ecRangeLabel').innerText = `${u.ecMin} - ${u.ecMax}`;
+      if (document.getElementById('tempRangeLabel')) document.getElementById('tempRangeLabel').innerText = `${u.tempMin}°C - ${u.tempMax}°C`;
+    }
+  });
+}
+
+function evaluarAlertasAnomalias(d) {
+  const alertBox = document.getElementById('alertStatusBox');
+  if (!alertBox) return;
+
+  let anomalies = [];
+  if (d.ph < currentThresholds.phMin || d.ph > currentThresholds.phMax) anomalies.push(`pH fuera de rango (${d.ph})`);
+  if (huertoActivo === 'nft' && (d.ec < currentThresholds.ecMin || d.ec > currentThresholds.ecMax)) anomalies.push(`CE fuera de rango (${d.ec})`);
+  if (d.temperatura < currentThresholds.tempMin || d.temperatura > currentThresholds.tempMax) anomalies.push(`Temperatura crítica (${d.temperatura}°C)`);
+
+  if (anomalies.length > 0) {
+    alertBox.style.background = "rgba(255, 93, 103, 0.15)";
+    alertBox.style.borderColor = "var(--danger)";
+    alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> <strong>ALERTA CRÍTICA:</strong> ${anomalies.join(', ')}`;
+  } else {
+    alertBox.style.background = "rgba(0,0,0,0.3)";
+    alertBox.style.borderColor = "var(--card-border)";
+    alertBox.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> Todos los parámetros se encuentran dentro de los rangos óptimos.`;
+  }
+}
+
+function registrarCalibracionSonda(tipo) {
+  const hoy = new Date().toLocaleDateString('es-MX');
+  database.ref(`mantenimiento/calibracion_${tipo}`).set(hoy);
+  alert(`¡Calibración de la sonda de ${tipo.toUpperCase()} guardada!`);
 }
 
 function cargarMantenimientoFirebase() {
   database.ref('mantenimiento').on('value', (snap) => {
     const m = snap.val();
-    if (m && m.calibracion) document.getElementById('txtCalibDate').innerText = m.calibracion;
+    if (m) {
+      if (m.calibracion_ph && document.getElementById('calibPhDate')) document.getElementById('calibPhDate').innerText = m.calibracion_ph;
+      if (m.calibracion_ec && document.getElementById('calibEcDate')) document.getElementById('calibEcDate').innerText = m.calibracion_ec;
+      if (m.calibracion_temp && document.getElementById('calibTempDate')) document.getElementById('calibTempDate').innerText = m.calibracion_temp;
+    }
   });
 }
 
@@ -420,13 +530,33 @@ function guardarProgramacion() {
   const on = document.getElementById('schedTimeOn').value;
   const off = document.getElementById('schedTimeOff').value;
   database.ref(`schedules/${act}`).set({ on, off });
-  alert("Regla de horario guardada con éxito.");
+  alert("Regla guardada.");
 }
 
 function solicitarNotificaciones() {
-  if (!messaging) return alert("Tu navegador no soporta notificaciones push.");
+  if (!messaging) return alert("Tu navegador no soporta notificaciones Web Push.");
+  
   Notification.requestPermission().then((permission) => {
-    if (permission === 'granted') alert("¡Notificaciones Push activadas!");
+    if (permission === 'granted') {
+      navigator.serviceWorker.register('./firebase-messaging-sw.js').then((registration) => {
+        messaging.getToken({ 
+          serviceWorkerRegistration: registration,
+          vapidKey: 'BJBLJ1psCydMWxnpj3LX5TbH6ev9Br8EjHgoBUdniqs2DHwm-5o2m20UW-TRyIUGT5ZFPQaoRgJSEKX1VCE2-M4' 
+        }).then((currentToken) => {
+          if (currentToken) {
+            const tokenKey = currentToken.substring(0, 15);
+            database.ref('fcm_tokens/' + tokenKey).set({
+              token: currentToken,
+              dispositivo: navigator.userAgent,
+              actualizado: Date.now()
+            });
+            alert("¡Notificaciones Push Nativas activadas con éxito!");
+          }
+        });
+      });
+    } else {
+      alert("Permiso de notificaciones denegado.");
+    }
   });
 }
 

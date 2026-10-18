@@ -4,18 +4,33 @@
   "description": "Panel de control y monitoreo del huerto hidropónico - Escuela Superior de Huejutla",
   "start_url": "./index.html",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#030d0a",
   "theme_color": "#35e58a",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/192/1892/1892751.png",
+      "src": "[https://cdn-icons-png.flaticon.com/192/1892/1892751.png](https://cdn-icons-png.flaticon.com/192/1892/1892751.png)",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/1892/1892751.png",
+      "src": "[https://cdn-icons-png.flaticon.com/512/1892/1892751.png](https://cdn-icons-png.flaticon.com/512/1892/1892751.png)",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Monitoreo",
+      "url": "./index.html",
+      "description": "Ver sensores en tiempo real"
+    },
+    {
+      "name": "Actuadores",
+      "url": "./index.html",
+      "description": "Controlar bombas y bypass"
     }
   ]
 }

@@ -15,10 +15,34 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Mensaje recibido en segundo plano:', payload);
-  const notificationTitle = payload.notification.title;
+  
+  const notificationTitle = payload.notification?.title || "Alerta del Huerto IoT";
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: 'https://cdn-icons-png.flaticon.com/192/1892/1892751.png'
+    body: payload.notification?.body || "Se ha detectado un evento en el sistema.",
+    icon: 'https://cdn-icons-png.flaticon.com/192/1892/1892751.png',
+    badge: 'https://cdn-icons-png.flaticon.com/192/1892/1892751.png',
+    vibrate: [200, 100, 200],
+    data: {
+      url: './index.html'
+    }
   };
+
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        if (client.url.includes('index.html') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./index.html');
+      }
+    })
+  );
 });
