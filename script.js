@@ -367,7 +367,27 @@ function escucharFirebase() {
       if(document.getElementById('ecBar')) document.getElementById('ecBar').style.width = Math.min(100, (data.ec / 4) * 100) + '%';
       if(document.getElementById('tempBar')) document.getElementById('tempBar').style.width = Math.min(100, (data.temperatura / 50) * 100) + '%';
       if(document.getElementById('humBar')) document.getElementById('humBar').style.width = (data.humedad || 0) + '%';
-
+// Validación de estado de sensores en tiempo real
+      const tempBadge = document.getElementById('status-temp');
+      if (tempBadge) {
+        if (data.temperatura === undefined || data.temperatura === null || data.temperatura <= -127) {
+          tempBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Error`;
+          tempBadge.style.color = "var(--danger)";
+        } else {
+          tempBadge.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> OK`;
+          tempBadge.style.color = "var(--green-bright)";
+        }
+      }
+      const phBadge = document.getElementById('status-ph');
+      if (phBadge) {
+        if (data.ph === undefined || data.ph === null || data.ph < 0 || data.ph > 14) {
+          phBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Error`;
+          phBadge.style.color = "var(--danger)";
+        } else {
+          phBadge.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> OK`;
+          phBadge.style.color = "var(--green-bright)";
+        }
+      }
       evaluarAlertasAnomalias(data);
     } else {
       marcarDesconectado();

@@ -191,28 +191,44 @@
 
         <div class="sensors-grid">
           <div class="card metric-card card-ph">
-            <div class="card-header"><span>pH del Agua</span><i class="fa-solid fa-flask icon-ph chemical-bubble"></i></div>
+            <div class="card-header">
+              <span>pH del Agua</span>
+              <span id="status-ph" style="font-size: 0.75rem; font-weight: 700; color: var(--green-bright);"><i class="fa-solid fa-circle-check"></i> OK</span>
+              <i class="fa-solid fa-flask icon-ph chemical-bubble"></i>
+            </div>
             <div class="metric-value"><span id="phValue">--</span> <small>pH</small></div>
             <div class="progress-bar"><div class="progress-fill fill-ph" id="phBar" style="width: 0%;"></div></div>
             <div class="metric-footer"><span>Óptimo: <span id="phRangeLabel">5.5 - 6.5</span></span></div>
           </div>
 
           <div class="card metric-card card-ce" id="cardCeWrapper">
-            <div class="card-header"><span>Conductividad (CE)</span><i class="fa-solid fa-bolt icon-ce electric-pulse"></i></div>
+            <div class="card-header">
+              <span>Conductividad (CE)</span>
+              <span id="status-ec" style="font-size: 0.75rem; font-weight: 700; color: var(--green-bright);"><i class="fa-solid fa-circle-check"></i> OK</span>
+              <i class="fa-solid fa-bolt icon-ce electric-pulse"></i>
+            </div>
             <div class="metric-value"><span id="ecValue">--</span> <small>mS/cm</small></div>
             <div class="progress-bar"><div class="progress-fill fill-ce" id="ecBar" style="width: 0%;"></div></div>
             <div class="metric-footer"><span>Óptimo: <span id="ecRangeLabel">2.0 - 2.5</span></span></div>
           </div>
 
           <div class="card metric-card card-temp">
-            <div class="card-header"><span>Temperatura Agua (DS18B20)</span><i class="fa-solid fa-temperature-half icon-temp thermal-glow"></i></div>
+            <div class="card-header">
+              <span>Temperatura Agua (DS18B20)</span>
+              <span id="status-temp" style="font-size: 0.75rem; font-weight: 700; color: var(--green-bright);"><i class="fa-solid fa-circle-check"></i> OK</span>
+              <i class="fa-solid fa-temperature-half icon-temp thermal-glow"></i>
+            </div>
             <div class="metric-value"><span id="tempValue">--</span> <small>°C</small></div>
             <div class="progress-bar"><div class="progress-fill fill-temp" id="tempBar" style="width: 0%;"></div></div>
             <div class="metric-footer"><span>Óptimo: <span id="tempRangeLabel">18°C - 24°C</span></span></div>
           </div>
 
           <div class="card metric-card card-hum">
-            <div class="card-header"><span>Humedad Ambiente (BME280)</span><i class="fa-solid fa-droplet icon-hum water-drop-anim"></i></div>
+            <div class="card-header">
+              <span>Humedad Ambiente (BME280)</span>
+              <span id="status-hum" style="font-size: 0.75rem; font-weight: 700; color: var(--green-bright);"><i class="fa-solid fa-circle-check"></i> OK</span>
+              <i class="fa-solid fa-droplet icon-hum water-drop-anim"></i>
+            </div>
             <div class="metric-value"><span id="humValue">--</span> <small>%</small></div>
             <div class="progress-bar"><div class="progress-fill fill-hum" id="humBar" style="width: 0%;"></div></div>
             <div class="metric-footer"><span>Ambiente Exterior</span></div>
