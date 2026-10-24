@@ -1,9 +1,14 @@
-const CACHE_NAME = 'huerto-iot-v5';
+const CACHE_NAME = 'huerto-iot-v6';
 const urlsToCache = [
   './',
   './index.html',
-  './style.css',
-  './script.js',
+  './css/style.css',
+  './css/animations.css',
+  './js/config.js',
+  './js/auth.js',
+  './js/sensors.js',
+  './js/charts.js',
+  './js/trackers.js',
   './manifest.json'
 ];
 

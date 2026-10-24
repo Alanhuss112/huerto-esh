@@ -19,7 +19,9 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
   
-  <link rel="stylesheet" href="style.css">
+  <!-- Estilos CSS Modulares -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
 </head>
 <body class="theme-emerald">
 
@@ -487,10 +489,10 @@
         </div>
       </section>
 
-      <!-- SECCIÓN 5: BITÁCORA Y SISTEMA AVANZADO DE CALIBRACIÓN -->
+      <!-- SECCIÓN 5: BITÁCORA, CALIBRACIÓN Y ALERTAS PUSH -->
       <section id="section-history" class="app-section hidden">
         <div class="section-heading">
-          <h2><i class="fa-solid fa-box-archive"></i> Bitácora Histórica & Calibración de Sondas</h2>
+          <h2><i class="fa-solid fa-box-archive"></i> Bitácora Histórica, Calibración & Alertas Push</h2>
         </div>
 
         <div class="grid-2-cols">
@@ -503,7 +505,7 @@
                 <button class="btn-danger-custom admin-only" onclick="purgarBitacoraFirebase()" title="Borrar Historial"><i class="fa-solid fa-trash-can"></i></button>
               </div>
             </div>
-            <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; background: rgba(0,0,0,0.3);">
+            <div style="max-height: 280px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; background: rgba(0,0,0,0.3);">
               <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
                 <thead>
                   <tr style="color: var(--green-bright); border-bottom: 1px solid var(--card-border);">
@@ -548,6 +550,33 @@
             </div>
           </div>
         </div>
+
+        <!-- PANEL DE HISTORIAL DE ALERTAS PUSH RECIENTES -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="chart-header">
+            <h3><i class="fa-solid fa-bell" style="color: var(--warning);"></i> Historial de Alertas Push & Anomalías Recientes</h3>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-action" onclick="cargarHistorialAlertasFirebase()" title="Recargar Alertas"><i class="fa-solid fa-rotate"></i></button>
+              <button class="btn-danger-custom admin-only" onclick="purgarAlertasFirebase()" title="Limpiar Historial de Alertas"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
+            </div>
+          </div>
+          <p class="card-subtitle">Registro cronológico de advertencias críticas y notificaciones push enviadas por anomalías en los sensores.</p>
+          <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 12px; padding: 10px; background: rgba(0,0,0,0.3);">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+              <thead>
+                <tr style="color: var(--warning); border-bottom: 1px solid var(--card-border);">
+                  <th style="padding: 8px;">Fecha / Hora</th>
+                  <th style="padding: 8px;">Tipo de Anomalía / Evento</th>
+                  <th style="padding: 8px;">Valor Registrado</th>
+                  <th style="padding: 8px;">Estado Push</th>
+                </tr>
+              </thead>
+              <tbody id="tablaAlertasPushBody" style="color: var(--text-muted);">
+                <tr><td colspan="4" style="text-align: center; padding: 15px;">Sin alertas recientes registradas.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -558,6 +587,11 @@
     </footer>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Scripts Modularizados -->
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/sensors.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/trackers.js"></script>
 </body>
 </html>

@@ -1,0 +1,63 @@
+/* --- ANIMACIONES Y EFECTOS VISUALES PARA HUERTO IoT ESH --- */
+
+/* Orbes ambientales de fondo */
+@keyframes floatOrb {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, 40px) scale(1.1); }
+  100% { transform: translate(-30px, -20px) scale(0.95); }
+}
+
+/* Rebote de planta en login */
+@keyframes plantBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.05); }
+}
+.plant-bounce { animation: plantBounce 3s infinite ease-in-out; }
+
+/* Giro de iconos de temperatura / peltier */
+@keyframes snowflakeSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.snowflake-spin { animation: snowflakeSpin 8s linear infinite; }
+
+/* Burbuja química en tarjeta de pH */
+@keyframes chemicalBubble {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 6px var(--cyan-neon)); }
+}
+.chemical-bubble { animation: chemicalBubble 2.5s infinite ease-in-out; }
+
+/* Pulso de jeringa de nutrientes */
+@keyframes syringePulse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px) scale(1.1); filter: drop-shadow(0 0 8px var(--green-bright)); }
+}
+.syringe-pulse { animation: syringePulse 2s infinite ease-in-out; }
+
+/* Animación de gota de humedad */
+@keyframes waterDrop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+.water-drop-anim { animation: waterDrop 2s infinite ease-in-out; }
+
+/* Partículas de flujo en tuberías y diagrama hidráulico */
+@keyframes moveFlow {
+  from { left: -20%; }
+  to { left: 120%; }
+}
+
+/* Transición de aparición de tarjeta de login */
+@keyframes slideUpCard {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Efecto de sacudida (shake) para contraseña incorrecta */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.shake { animation: shake 0.4s ease-in-out; }

@@ -39,6 +39,7 @@ let ultimaVezDatos = 0;
 let intervaloVerificacion = null;
 let refSensoresActual = null;
 let refActuadoresActual = null;
+let ultimaAlertaRegistrada = 0; // Control de anti-spam para alertas
 
 let currentThresholds = {
   phMin: 5.5, phMax: 6.5,
@@ -70,6 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarHistorialFirebase();
   cargarMantenimientoFirebase();
   cargarUmbralesFirebase();
+  cargarHistorialAlertasFirebase();
 });
 
 function cambiarTemaVisual(themeName, guardar = true) {
@@ -303,6 +305,12 @@ function purgarBitacoraFirebase() {
   if (confirm("¿Purgar historial de lecturas y bitácora en Firebase?")) {
     database.ref('historial').remove().then(() => cargarHistorialFirebase());
     database.ref('mantenimiento').remove().then(() => cargarMantenimientoFirebase());
+  }
+}
+
+function purgarAlertasFirebase() {
+  if (confirm("¿Desea limpiar todo el historial de alertas push recientes?")) {
+    database.ref('push_alerts_history').remove().then(() => cargarHistorialAlertasFirebase());
   }
 }
 
@@ -547,11 +555,52 @@ function evaluarAlertasAnomalias(d) {
     alertBox.style.background = "rgba(255, 93, 103, 0.15)";
     alertBox.style.borderColor = "var(--danger)";
     alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> <strong>ALERTA CRÍTICA:</strong> ${anomalies.join(', ')}`;
+
+    // Registrar en el historial de alertas push (con anti-spam de 2 minutos)
+    const ahora = Date.now();
+    if (ahora - ultimaAlertaRegistrada > 120000) {
+      ultimaAlertaRegistrada = ahora;
+      const fechaLegible = new Date().toLocaleString('es-MX');
+      database.ref('push_alerts_history').push({
+        mensaje: anomalies.join(' | '),
+        valor: `pH: ${d.ph} | CE: ${d.ec || 'N/A'} | Temp: ${d.temperatura}°C`,
+        fecha: fechaLegible,
+        estado: 'Enviada / Registrada',
+        timestamp: ahora
+      });
+    }
   } else {
     alertBox.style.background = "rgba(0,0,0,0.3)";
     alertBox.style.borderColor = "var(--card-border)";
     alertBox.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green-bright);"></i> Todos los parámetros se encuentran dentro de los rangos óptimos.`;
   }
+}
+
+// --- CARGAR Y RENDERIZAR HISTORIAL DE ALERTAS PUSH ---
+function cargarHistorialAlertasFirebase() {
+  database.ref('push_alerts_history').limitToLast(20).on('value', (snap) => {
+    const data = snap.val();
+    const tbody = document.getElementById('tablaAlertasPushBody');
+    if (!tbody) return;
+
+    if (!data) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 15px;">Sin alertas recientes registradas.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = '';
+    Object.values(data).reverse().forEach(reg => {
+      const fila = document.createElement('tr');
+      fila.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+      fila.innerHTML = `
+        <td style="padding: 8px; color: var(--warning); font-weight: 600;">${reg.fecha || 'N/D'}</td>
+        <td style="padding: 8px;"><strong>${reg.mensaje}</strong></td>
+        <td style="padding: 8px; font-size: 0.8rem;">${reg.valor || '--'}</td>
+        <td style="padding: 8px;"><span style="background: rgba(255,209,102,0.15); color: var(--warning); padding: 3px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;">${reg.estado || 'Activa'}</span></td>
+      `;
+      tbody.appendChild(fila);
+    });
+  });
 }
 
 // --- REGISTRO Y CARGA AVANZADA DE CALIBRACIÓN EN LA BITÁCORA ---
