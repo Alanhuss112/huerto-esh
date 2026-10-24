@@ -37,11 +37,11 @@
   <div id="loginOverlay" class="login-overlay">
     <div class="login-hex-card" id="loginCard">
       <div class="login-brand-header">
-        <div class="login-avatar-top">
-          <div class="login-avatar-inner" id="hexAvatarIcon">
-            <i class="fa-solid fa-seedling plant-bounce"></i>
-          </div>
-        </div>
+<div class="login-avatar-top">
+  <div class="login-avatar-inner" id="hexAvatarIcon">
+    <i class="fa-solid fa-seedling plant-bounce"></i>
+  </div>
+</div>
         <span class="hex-badge-label"><i class="fa-solid fa-shield-halved"></i> IoT ESH</span>
         <h2>SISTEMA HIDROPÓNICO</h2>
         <p class="login-subtitle">Seleccione su perfil de usuario</p>
@@ -146,7 +146,7 @@
         </button>
 
         <!-- BOTÓN MODO KIOSCO / PANTALLA DE CAMPO -->
-        <button class="btn-action" id="btnKiosk" onclick="toggleModoKiosco()" title="Activar Modo Kiosco / Pantalla de Campo">
+        <button class="btn-action" id="btnKiosk" onclick="toggleModoKiosco()" title="Activar/Desactivar Modo Kiosco">
           <i class="fa-solid fa-tablet-screen-button"></i>
         </button>
 
@@ -245,18 +245,23 @@
           </div>
         </div>
 
-        <!-- GRÁFICA DE CORRELACIÓN CRUZADA (EJE DUAL) -->
+        <!-- GRÁFICA DE CORRELACIÓN CRUZADA / INDIVIDUAL -->
         <div class="grid-2-cols" style="margin-top: 20px;">
           <div class="card chart-card">
             <div class="chart-header">
-              <h3><i class="fa-solid fa-chart-line"></i> Correlación Cruzada (Eje Dual)</h3>
-              <div style="display: flex; gap: 8px; align-items: center;">
+              <h3><i class="fa-solid fa-chart-line"></i> Gráfica Analítica (Dual / Individual)</h3>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <select id="chartSelectY1" class="select-metric" title="Eje Y1 (Izquierda)">
                   <option value="ph">Y1: pH del Agua</option>
                   <option value="temperatura">Y1: Temperatura (°C)</option>
+                  <option value="ec">Y1: Conductividad (CE)</option>
+                  <option value="humedad">Y1: Humedad (%)</option>
                 </select>
                 <select id="chartSelectY2" class="select-metric" title="Eje Y2 (Derecha)">
-                  <option value="ec">Y2: Conductividad (CE)</option>
+                  <option value="none">-- Modo Individual (Ocultar Y2) --</option>
+                  <option value="ec" selected>Y2: Conductividad (CE)</option>
+                  <option value="ph">Y2: pH del Agua</option>
+                  <option value="temperatura">Y2: Temperatura (°C)</option>
                   <option value="humedad">Y2: Humedad (%)</option>
                 </select>
                 <button class="btn-export" onclick="exportarGraficaPNG()" title="Descargar Gráfica PNG"><i class="fa-solid fa-image"></i> PNG</button>
@@ -310,15 +315,35 @@
           <h2><i class="fa-solid fa-sliders"></i> Control de Actuadores, Bypass e Inyección Soluciones</h2>
         </div>
 
-        <!-- ESQUEMA VISUAL ANIMADO DEL SISTEMA HIDROPÓNICO / BYPASS -->
+        <!-- ESQUEMA VISUAL ANIMADO E INTERACTIVO DEL BYPASS E HIDRÁULICA -->
         <div class="card" style="margin-bottom: 20px; background: rgba(0,0,0,0.35); text-align: center; overflow: hidden;">
           <h3 style="font-size: 0.95rem; margin-bottom: 15px; color: var(--cyan-neon);"><i class="fa-solid fa-project-diagram"></i> Diagrama de Flujo e Hidráulica Interactiva</h3>
           <div class="hydraulic-schema-box">
-            <div class="schema-node" id="nodeTank"><i class="fa-solid fa-cube"></i><span>Tanque Principal</span></div>
-            <div class="schema-pipe" id="pipeFlow"><div class="flow-particle"></div></div>
-            <div class="schema-node" id="nodeBypass"><i class="fa-solid fa-code-branch" style="color: var(--warning);"></i><span>Bypass Activo</span></div>
-            <div class="schema-pipe" id="pipeBypassFlow"></div>
-            <div class="schema-node" id="nodePeltier"><i class="fa-solid fa-snowflake icon-peltier"></i><span>Waterblock / Peltier</span></div>
+            <div class="schema-node" id="schemaNodeTank">
+              <i class="fa-solid fa-cube"></i>
+              <span>Tanque Principal</span>
+              <small id="schemaStatusTank" style="font-size: 0.65rem; color: var(--green-bright);">Reposo</small>
+            </div>
+            
+            <div class="schema-pipe" id="pipeFlow">
+              <div class="flow-particle"></div>
+            </div>
+            
+            <div class="schema-node" id="schemaNodeBypass" style="border-color: var(--warning);">
+              <i class="fa-solid fa-code-branch" style="color: var(--warning);"></i>
+              <span>Válvula Bypass</span>
+              <small id="schemaStatusBypass" style="font-size: 0.65rem; color: var(--warning);">Desactivada</small>
+            </div>
+
+            <div class="schema-pipe" id="pipeBypassFlow">
+              <div class="flow-particle"></div>
+            </div>
+
+            <div class="schema-node" id="schemaNodePeltier">
+              <i class="fa-solid fa-snowflake icon-peltier"></i>
+              <span>Waterblock / Peltier</span>
+              <small id="schemaStatusPeltier" style="font-size: 0.65rem; color: var(--text-muted);">Apagado</small>
+            </div>
           </div>
         </div>
 

@@ -174,11 +174,56 @@ function actualizarBotonUI(id, estado) {
     statusEl.innerHTML = `<span class="status-dot" style="background:${estado ? 'var(--green-bright)' : 'var(--danger)'}"></span> ${estado ? 'ENCENDIDO' : 'APAGADO'}`;
   }
 
-  if (id === 'bomba_principal' || id === 'bypass') {
+  // Animación del flujo principal y nodos interactivos en el diagrama hidráulico
+  if (id === 'bomba_principal') {
     const pipe = document.getElementById('pipeFlow');
+    const nodeTank = document.getElementById('schemaNodeTank');
+    const txtTank = document.getElementById('schemaStatusTank');
     if (pipe) {
-      if (estado) pipe.classList.add('flow-active');
-      else pipe.classList.remove('flow-active');
+      if (estado) {
+        pipe.classList.add('flow-active');
+        if(nodeTank) nodeTank.style.borderColor = 'var(--green-bright)';
+        if(txtTank) { txtTank.innerText = "Fluyendo"; txtTank.style.color = "var(--green-bright)"; }
+      } else {
+        pipe.classList.remove('flow-active');
+        if(nodeTank) nodeTank.style.borderColor = 'var(--card-border)';
+        if(txtTank) { txtTank.innerText = "Reposo"; txtTank.style.color = "var(--text-muted)"; }
+      }
+    }
+  }
+
+  // Animación interactiva para la Válvula Bypass
+  if (id === 'bypass') {
+    const pipeBypass = document.getElementById('pipeBypassFlow');
+    const nodeBypass = document.getElementById('schemaNodeBypass');
+    const txtBypass = document.getElementById('schemaStatusBypass');
+    if (pipeBypass) {
+      if (estado) {
+        pipeBypass.classList.add('flow-active');
+        if(nodeBypass) nodeBypass.style.borderColor = 'var(--warning)';
+        if(txtBypass) { txtBypass.innerText = "Desviando"; txtBypass.style.color = "var(--warning)"; }
+      } else {
+        pipeBypass.classList.remove('flow-active');
+        if(nodeBypass) nodeBypass.style.borderColor = 'var(--card-border)';
+        if(txtBypass) { txtBypass.innerText = "Desactivada"; txtBypass.style.color = "var(--text-muted)"; }
+      }
+    }
+  }
+
+  // Animación para el Peltier
+  if (id === 'peltier') {
+    const nodePeltier = document.getElementById('schemaNodePeltier');
+    const txtPeltier = document.getElementById('schemaStatusPeltier');
+    if (nodePeltier && txtPeltier) {
+      if (estado) {
+        nodePeltier.style.borderColor = 'var(--cyan-neon)';
+        txtPeltier.innerText = "Enfriando";
+        txtPeltier.style.color = "var(--cyan-neon)";
+      } else {
+        nodePeltier.style.borderColor = 'var(--card-border)';
+        txtPeltier.innerText = "Apagado";
+        txtPeltier.style.color = "var(--text-muted)";
+      }
     }
   }
 }

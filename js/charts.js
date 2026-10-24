@@ -36,7 +36,8 @@ function inicializarGraficaDual() {
           borderColor: '#ffd166',
           backgroundColor: 'rgba(255, 209, 102, 0.1)',
           yAxisID: 'y2',
-          tension: 0.3, fill: true
+          tension: 0.3, fill: true,
+          hidden: false
         }
       ]
     },
@@ -60,18 +61,32 @@ function actualizarGraficaDual() {
   const m1 = document.getElementById('chartSelectY1').value;
   const m2 = document.getElementById('chartSelectY2').value;
   const cfg1 = configMap[m1];
-  const cfg2 = configMap[m2];
 
   if (!sensorChart) return;
+  
+  // Configurar Dataset Principal (Y1)
   sensorChart.data.datasets[0].label = cfg1.label;
   sensorChart.data.datasets[0].data = historyData[m1];
   sensorChart.data.datasets[0].borderColor = cfg1.color;
   sensorChart.data.datasets[0].backgroundColor = cfg1.bg;
 
-  sensorChart.data.datasets[1].label = cfg2.label;
-  sensorChart.data.datasets[1].data = historyData[m2];
-  sensorChart.data.datasets[1].borderColor = cfg2.color;
-  sensorChart.data.datasets[1].backgroundColor = cfg2.bg;
+  // Configurar Dataset Secundario (Y2) o modo Individual
+  const datasetY2 = sensorChart.data.datasets[1];
+  const scaleY2 = sensorChart.options.scales.y2;
+
+  if (m2 === 'none' || !configMap[m2]) {
+    datasetY2.hidden = true;
+    if (scaleY2) scaleY2.display = false;
+  } else {
+    const cfg2 = configMap[m2];
+    datasetY2.hidden = false;
+    if (scaleY2) scaleY2.display = true;
+    datasetY2.label = cfg2.label;
+    datasetY2.data = historyData[m2];
+    datasetY2.borderColor = cfg2.color;
+    datasetY2.backgroundColor = cfg2.bg;
+    datasetY2.yAxisID = 'y2';
+  }
 
   sensorChart.update();
   calcularEstadisticasY1(m1);
