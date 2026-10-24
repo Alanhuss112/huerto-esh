@@ -100,3 +100,14 @@ function iniciarReloj() {
     if (reloj) reloj.innerText = new Date().toLocaleTimeString('es-MX');
   }, 1000);
 }
+
+// --- MODO KIOSCO / PANTALLA DE CAMPO ---
+function toggleModoKiosco() {
+  document.body.classList.toggle('modo-kiosco');
+  const activo = document.body.classList.contains('modo-kiosco');
+  if (typeof mostrarToast === 'function') {
+    mostrarToast("Modo Kiosco", activo ? "Activado para pantalla de campo" : "Desactivado", "warning");
+  } else {
+    alert(activo ? "Modo Kiosco Activado" : "Modo Kiosco Desactivado");
+  }
+}

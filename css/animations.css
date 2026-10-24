@@ -1,63 +1,65 @@
-/* --- ANIMACIONES Y EFECTOS VISUALES PARA HUERTO IoT ESH --- */
+/* --- CONTENEDOR Y ESTILOS DE ALERTAS TOAST FLOTANTES --- */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+.toast-card {
+  pointer-events: auto;
+  background: rgba(12, 38, 30, 0.92);
+  border: 1px solid var(--danger);
+  color: var(--text-main);
+  padding: 14px 18px;
+  border-radius: 16px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(15px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 300px;
+  max-width: 380px;
+  animation: slideInToast 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.toast-card.success { border-color: var(--green-bright); }
+.toast-card.warning { border-color: var(--warning); }
 
-/* Orbes ambientales de fondo */
-@keyframes floatOrb {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(30px, 40px) scale(1.1); }
-  100% { transform: translate(-30px, -20px) scale(0.95); }
+@keyframes slideInToast {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeOutToast {
+  to { transform: translateX(120%); opacity: 0; }
 }
 
-/* Rebote de planta en login */
-@keyframes plantBounce {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-5px) scale(1.05); }
-}
-.plant-bounce { animation: plantBounce 3s infinite ease-in-out; }
+.toast-icon { font-size: 1.4rem; color: var(--danger); }
+.toast-card.success .toast-icon { color: var(--green-bright); }
+.toast-card.warning .toast-icon { color: var(--warning); }
+.toast-content { flex: 1; display: flex; flex-direction: column; }
+.toast-content strong { font-size: 0.9rem; font-weight: 700; }
+.toast-content small { font-size: 0.75rem; color: var(--text-muted); }
+.toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; }
+.toast-close:hover { color: var(--text-main); }
 
-/* Giro de iconos de temperatura / peltier */
-@keyframes snowflakeSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+/* --- MODO KIOSCO / PANTALLA DE CAMPO --- */
+body.modo-kiosco .nav-sections-bar,
+body.modo-kiosco .huerto-selector-bar,
+body.modo-kiosco .main-header .system-status-bar select,
+body.modo-kiosco .main-header .btn-action:not(#btnExitKiosk) {
+  display: none !important;
 }
-.snowflake-spin { animation: snowflakeSpin 8s linear infinite; }
-
-/* Burbuja química en tarjeta de pH */
-@keyframes chemicalBubble {
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 6px var(--cyan-neon)); }
+body.modo-kiosco .app-section:not(.hidden) {
+  display: flex !important;
+  flex-direction: column;
+  gap: 25px;
 }
-.chemical-bubble { animation: chemicalBubble 2.5s infinite ease-in-out; }
-
-/* Pulso de jeringa de nutrientes */
-@keyframes syringePulse {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px) scale(1.1); filter: drop-shadow(0 0 8px var(--green-bright)); }
+body.modo-kiosco .metric-value {
+  font-size: 3.8rem !important;
 }
-.syringe-pulse { animation: syringePulse 2s infinite ease-in-out; }
-
-/* Animación de gota de humedad */
-@keyframes waterDrop {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(4px); }
+body.modo-kiosco .card {
+  padding: 35px !important;
 }
-.water-drop-anim { animation: waterDrop 2s infinite ease-in-out; }
-
-/* Partículas de flujo en tuberías y diagrama hidráulico */
-@keyframes moveFlow {
-  from { left: -20%; }
-  to { left: 120%; }
-}
-
-/* Transición de aparición de tarjeta de login */
-@keyframes slideUpCard {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* Efecto de sacudida (shake) para contraseña incorrecta */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-8px); }
-  40%, 80% { transform: translateX(8px); }
-}
-.shake { animation: shake 0.4s ease-in-out; }

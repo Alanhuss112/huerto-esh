@@ -50,6 +50,8 @@ function inicializarGraficaDual() {
     }
   });
 
+  window.sensorChart = sensorChart;
+
   document.getElementById('chartSelectY1').addEventListener('change', actualizarGraficaDual);
   document.getElementById('chartSelectY2').addEventListener('change', actualizarGraficaDual);
 }
@@ -132,4 +134,21 @@ function exportarCSV() {
     link.download = `Bitacora_${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   });
+}
+
+function exportarGraficaPNG() {
+  if (!sensorChart) return alert("La gráfica no está inicializada.");
+  const urlImage = sensorChart.toBase64Image();
+  const link = document.createElement('a');
+  link.href = urlImage;
+  link.download = `Analitica_Huerto_ESH_${new Date().toISOString().split('T')[0]}.png`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  if (typeof mostrarToast === 'function') {
+    mostrarToast("Exportación Exitosa", "Gráfica descargada en alta resolución PNG", "success");
+  } else {
+    alert("¡Gráfica exportada a PNG con éxito!");
+  }
 }

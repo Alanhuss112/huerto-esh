@@ -2,7 +2,7 @@
   "name": "Huerto Hidropónico IoT ESH",
   "short_name": "Huerto ESH",
   "description": "Panel de control y monitoreo del huerto hidropónico - Escuela Superior de Huejutla",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#030d0a",
@@ -12,24 +12,26 @@
       "src": "https://cdn-icons-png.flaticon.com/192/1892/1892751.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "https://cdn-icons-png.flaticon.com/512/1892/1892751.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "shortcuts": [
     {
       "name": "Monitoreo",
-      "url": "./index.html",
+      "short_name": "Sensores",
+      "url": "index.html#sensors",
       "description": "Ver sensores en tiempo real"
     },
     {
       "name": "Actuadores",
-      "url": "./index.html",
+      "short_name": "Control",
+      "url": "index.html#actuators",
       "description": "Controlar bombas y bypass"
     }
   ]

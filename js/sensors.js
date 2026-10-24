@@ -380,3 +380,65 @@ function solicitarNotificaciones() {
     }
   });
 }
+
+// --- COMANDOS REMOTOS OTA / ESP32 ---
+function enviarComandoRemotoESP32(cmd) {
+  if ((userRole || localStorage.getItem("hidro_role")) === 'guest') {
+    return alert("Acceso restringido a administradores.");
+  }
+  if (confirm(`¿Seguro que desea enviar el comando remoto [${cmd}] al ESP32?`)) {
+    database.ref('comandos_ota').set({
+      accion: cmd,
+      timestamp: Date.now()
+    }).then(() => {
+      alert(`Comando '${cmd}' enviado correctamente al microcontrolador.`);
+    });
+  }
+}
+
+// --- ASISTENTE DE CALIBRACIÓN GUIADA PASO A PASO ---
+function iniciarCalibracionGuiada(tipo) {
+  const modal = document.getElementById('calibrationModal');
+  const content = document.getElementById('calibStepContent');
+  if (!modal || !content) return;
+
+  modal.classList.remove('hidden');
+  
+  let titulo = tipo === 'ph' ? 'Calibración Sonda pH' : tipo === 'ec' ? 'Calibración Sonda CE' : 'Calibración Offset Temperatura';
+  
+  content.innerHTML = `
+    <h4 style="color: var(--green-bright); margin-bottom: 5px;">${titulo} - Paso 1 de 3</h4>
+    <p>1. Limpie cuidadosamente la sonda con agua destilada y séquela con un paño suave.</p>
+    <p>2. Sumerja el sensor en la solución estándar de referencia correspondiente.</p>
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+      <button class="btn-add" style="flex:1;" onclick="ejecutarPasoCalibracion('${tipo}', 2)">Siguiente Paso <i class="fa-solid fa-arrow-right"></i></button>
+      <button class="btn-danger-custom" onclick="cerrarModalCalibracion()">Cancelar</button>
+    </div>
+  `;
+}
+
+function ejecutarPasoCalibracion(tipo, paso) {
+  const content = document.getElementById('calibStepContent');
+  if (!content) return;
+
+  if (paso === 2) {
+    content.innerHTML = `
+      <h4 style="color: var(--warning); margin-bottom: 5px;">Calibración - Paso 2 de 3</h4>
+      <p>Esperando estabilización de lectura del sensor (lectura en curso)...</p>
+      <div style="text-align: center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--cyan-neon);"></i></div>
+      <button class="btn-add" style="width: 100%; margin-top: 15px;" onclick="ejecutarPasoCalibracion('${tipo}', 3)">Confirmar Estabilización</button>
+    `;
+  } else if (paso === 3) {
+    registrarCalibracionSonda(tipo);
+    content.innerHTML = `
+      <h4 style="color: var(--green-bright); margin-bottom: 5px;"><i class="fa-solid fa-circle-check"></i> Calibración Exitosa</h4>
+      <p>Los parámetros de calibración se han guardado y sincronizado con éxito.</p>
+      <button class="btn-add" style="width: 100%; margin-top: 15px;" onclick="cerrarModalCalibracion()">Finalizar</button>
+    `;
+  }
+}
+
+function cerrarModalCalibracion() {
+  const modal = document.getElementById('calibrationModal');
+  if (modal) modal.classList.add('hidden');
+}

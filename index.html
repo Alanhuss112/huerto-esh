@@ -30,6 +30,9 @@
   <div class="ambient-glow orb-2"></div>
   <div class="ambient-glow orb-3"></div>
 
+  <!-- CONTENEDOR DE ALERTAS TOAST FLOTANTES -->
+  <div id="toastContainer" class="toast-container"></div>
+
   <!-- OVERLAY DE LOGIN -->
   <div id="loginOverlay" class="login-overlay">
     <div class="login-hex-card" id="loginCard">
@@ -142,6 +145,11 @@
           <i class="fa-solid fa-bell"></i>
         </button>
 
+        <!-- BOTÓN MODO KIOSCO / PANTALLA DE CAMPO -->
+        <button class="btn-action" id="btnKiosk" onclick="toggleModoKiosco()" title="Activar Modo Kiosco / Pantalla de Campo">
+          <i class="fa-solid fa-tablet-screen-button"></i>
+        </button>
+
         <button class="btn-action btn-logout" onclick="cerrarSesion()" title="Cerrar Sesión">
           <i class="fa-solid fa-power-off"></i>
         </button>
@@ -242,7 +250,7 @@
           <div class="card chart-card">
             <div class="chart-header">
               <h3><i class="fa-solid fa-chart-line"></i> Correlación Cruzada (Eje Dual)</h3>
-              <div style="display: flex; gap: 8px;">
+              <div style="display: flex; gap: 8px; align-items: center;">
                 <select id="chartSelectY1" class="select-metric" title="Eje Y1 (Izquierda)">
                   <option value="ph">Y1: pH del Agua</option>
                   <option value="temperatura">Y1: Temperatura (°C)</option>
@@ -251,6 +259,7 @@
                   <option value="ec">Y2: Conductividad (CE)</option>
                   <option value="humedad">Y2: Humedad (%)</option>
                 </select>
+                <button class="btn-export" onclick="exportarGraficaPNG()" title="Descargar Gráfica PNG"><i class="fa-solid fa-image"></i> PNG</button>
               </div>
             </div>
             <div class="chart-container"><canvas id="sensorChart"></canvas></div>
@@ -280,6 +289,15 @@
               <div class="diag-row">
                 <span><i class="fa-solid fa-desktop"></i> Bus I2C / Display:</span>
                 <strong style="color: var(--green-bright);"><i class="fa-solid fa-circle-check"></i> LCD 16x2 + BME280 OK</strong>
+              </div>
+            </div>
+
+            <!-- Consola de Comandos OTA / Admin -->
+            <div class="admin-only" style="margin-top: 15px; border-top: 1px solid var(--card-border); padding-top: 10px;">
+              <h4 style="font-size: 0.85rem; color: var(--cyan-neon); margin-bottom: 8px;"><i class="fa-solid fa-terminal"></i> Comandos Remotos OTA</h4>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-add" style="font-size: 0.75rem; padding: 8px;" onclick="enviarComandoRemotoESP32('reinicio')"><i class="fa-solid fa-rotate"></i> Reiniciar ESP32</button>
+                <button class="btn-add" style="font-size: 0.75rem; padding: 8px; background: var(--warning);" onclick="enviarComandoRemotoESP32('forzar_muestreo')"><i class="fa-solid fa-flask"></i> Forzar Muestreo</button>
               </div>
             </div>
           </div>
@@ -543,9 +561,9 @@
               </div>
 
               <div class="admin-only" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                <button class="btn-add" onclick="registrarCalibracionSonda('ph')"><i class="fa-solid fa-vial"></i> Calibrar pH (Buffer 4/7/10)</button>
-                <button class="btn-add" onclick="registrarCalibracionSonda('ec')" style="background: var(--warning);"><i class="fa-solid fa-bolt"></i> Calibrar CE / TDS</button>
-                <button class="btn-add" onclick="registrarCalibracionSonda('temp')" style="background: var(--cyan-neon);"><i class="fa-solid fa-temperature-full"></i> Calibrar Temp DS18B20</button>
+                <button class="btn-add" onclick="iniciarCalibracionGuiada('ph')"><i class="fa-solid fa-vial"></i> Calibrar pH (Buffer 4/7/10)</button>
+                <button class="btn-add" onclick="iniciarCalibracionGuiada('ec')" style="background: var(--warning);"><i class="fa-solid fa-bolt"></i> Calibrar CE / TDS</button>
+                <button class="btn-add" onclick="iniciarCalibracionGuiada('temp')" style="background: var(--cyan-neon);"><i class="fa-solid fa-temperature-full"></i> Calibrar Temp DS18B20</button>
               </div>
             </div>
           </div>
@@ -585,6 +603,19 @@
       <p>Huerto Hidropónico Inteligente IoT · Escuela Superior de Huejutla · UAEH</p>
       <p style="font-size: 0.72rem; margin-top: 4px; opacity: 0.7;">Desarrollado por Alan Hussein Ramírez Téllez</p>
     </footer>
+  </div>
+
+  <!-- MODAL DE CALIBRACIÓN GUIADA PASO A PASO -->
+  <div id="calibrationModal" class="login-overlay hidden" style="backdrop-filter: blur(20px); z-index: 2000;">
+    <div class="login-hex-card" style="max-width: 480px; text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="color: var(--cyan-neon); font-size: 1.2rem;"><i class="fa-solid fa-flask-vial"></i> Asistente de Calibración Guiada</h3>
+        <button onclick="cerrarModalCalibracion()" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="calibStepContent" style="font-size: 0.92rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 15px;">
+        <!-- Contenido dinámico renderizado por JS -->
+      </div>
+    </div>
   </div>
 
   <!-- Scripts Modularizados -->

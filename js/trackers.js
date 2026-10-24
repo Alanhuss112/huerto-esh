@@ -63,7 +63,7 @@ function renderTrackerItem(key, item) {
       <span class="tracker-title">${item.title}</span>
       <div class="tracker-actions">
         <span class="tracker-days">Día ${currentDay} / ${totalDays}</span>
-        ${isAdmin ? `<button class="tracker-delete" onclick="database.ref('trackers/${key}').remove()"><i class="fa-solid fa-xmark"></i></button>` : ''}
+        ${isAdmin ? `<button class="tracker-delete" onclick="database.ref('trackers/${key}').remove()" title="Eliminar Lote"><i class="fa-solid fa-xmark"></i></button>` : ''}
       </div>
     </div>
     <div class="tracker-visual-bar">
@@ -94,7 +94,7 @@ function renderTaskItem(key, task) {
   div.innerHTML = `
     <div class="task-checkbox" onclick="database.ref('tasks/${key}/completed').set(!${task.completed})"><i class="fa-solid fa-check"></i></div>
     <span class="task-text">${task.text}</span>
-    ${isAdmin ? `<button class="task-delete" onclick="database.ref('tasks/${key}').remove()"><i class="fa-solid fa-xmark"></i></button>` : ''}
+    ${isAdmin ? `<button class="task-delete" onclick="database.ref('tasks/${key}').remove()" title="Eliminar Tarea"><i class="fa-solid fa-xmark"></i></button>` : ''}
   `;
   container.appendChild(div);
 }
@@ -104,5 +104,10 @@ function guardarProgramacion() {
   const on = document.getElementById('schedTimeOn').value;
   const off = document.getElementById('schedTimeOff').value;
   database.ref(`schedules/${act}`).set({ on, off });
-  alert("Regla guardada.");
+  
+  if (typeof mostrarToast === 'function') {
+    mostrarToast("Programador Cloud", "Regla de horario guardada con éxito", "success");
+  } else {
+    alert("Regla de horario guardada con éxito.");
+  }
 }
